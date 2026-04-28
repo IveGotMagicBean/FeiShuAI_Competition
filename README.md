@@ -2,7 +2,7 @@
 
 > **客户端侧 AI Agent 安全框架** · MCP 工具调用代理 + 策略沙箱 + DLP + 人在回路审批
 >
-> 飞书 AI 黑客松参赛项目
+> 飞书 AI 校园竞赛参赛项目
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-brightgreen.svg)](#)
