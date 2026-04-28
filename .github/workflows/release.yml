@@ -67,10 +67,9 @@ jobs:
             os: macos-latest
             triple: aarch64-apple-darwin
             sidecar_ext: ""
-          - label: macos-x64
-            os: macos-13
-            triple: x86_64-apple-darwin
-            sidecar_ext: ""
+          # macos-13（Intel）暂时移除：GitHub Actions runner 池子稀缺常排队 1h+，
+          # 而 Intel Mac 用 Rosetta 2 跑 aarch64-apple-darwin .dmg 完全可用。
+          # 等池子常态后或用户反馈强烈再加回来。
           - label: windows-x64
             os: windows-latest
             triple: x86_64-pc-windows-msvc
