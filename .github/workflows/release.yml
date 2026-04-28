@@ -187,18 +187,19 @@ jobs:
 
   # ==============================================================
   # 4. PyPI 发布（用 trusted publishing — 不需要 token）
+  #
+  # ⚠️ 默认关闭：先去 https://pypi.org/manage/account/publishing/ 注册 trusted publisher，
+  # 然后到仓库 Settings → Variables → 新建仓库变量 PYPI_ENABLED = true 启用。
+  # 没启用时这个 job 完全跳过，不会让整个 Release 失败。
   # ==============================================================
   pypi:
     name: Publish to PyPI
     needs: python-and-sidecar
     runs-on: ubuntu-latest
-    # 想发到 PyPI 就在仓库 Settings → Environments 创建一个 "pypi" 环境，
-    # 再到 https://pypi.org/manage/account/publishing/ 加个 trusted publisher。
-    # 没配也没关系，这一步会被 skipped。
+    if: vars.PYPI_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/v')
     environment:
       name: pypi
       url: https://pypi.org/p/sentinel-mcp
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download python-dist
         uses: actions/download-artifact@v4

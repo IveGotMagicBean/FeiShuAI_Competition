@@ -24,10 +24,11 @@ env/
 ENV/
 
 # ---- Python 构建产物（CI 重新生成）----
-build/
-build-sidecar/
-dist/
-dist-sidecar/
+# 用前导斜杠 = 只匹配仓库根，不会误伤 desktop/dist/（Tauri 前端）
+/build/
+/build-sidecar/
+/dist/
+/dist-sidecar/
 
 # ---- Tauri / Rust ----
 desktop/src-tauri/target/
