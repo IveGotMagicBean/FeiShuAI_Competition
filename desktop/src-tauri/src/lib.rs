@@ -96,9 +96,11 @@ pub fn run() {
                         let _ = app.emit("about-clicked", "v0.2.0");
                     }
                     "quit" => {
-                        // 在退出前 kill sidecar
+                        // 在退出前 kill sidecar；先把 child 从 Mutex 里 take 出来再 kill，
+                        // 避免 MutexGuard 跨 if-let 作用域引发借用问题
                         let s: State<SidecarState> = app.state();
-                        if let Some(child) = s.0.lock().unwrap().take() {
+                        let child_opt = s.0.lock().unwrap().take();
+                        if let Some(child) = child_opt {
                             let _ = child.kill();
                         }
                         app.exit(0);
@@ -127,7 +129,8 @@ pub fn run() {
             RunEvent::Exit => {
                 // 进程真正要退出时（quit 菜单）— 兜底再 kill 一遍 sidecar
                 let s: State<SidecarState> = app_handle.state();
-                if let Some(child) = s.0.lock().unwrap().take() {
+                let child_opt = s.0.lock().unwrap().take();
+                if let Some(child) = child_opt {
                     let _ = child.kill();
                 }
             }
