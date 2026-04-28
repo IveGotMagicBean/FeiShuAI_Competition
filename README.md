@@ -1,6 +1,6 @@
 # Sentinel-MCP
 
-> **客户端侧 AI Agent 安全框架** · MCP 工具调用代理 + 策略沙箱 + DLP + 人在回路审批
+> **客户端侧 AI Agent 安全框架** · MCP 工具调用代理 + 策略沙箱 + DLP
 >
 > 飞书 AI 校园竞赛参赛项目
 
@@ -11,12 +11,12 @@
 
 ---
 
-## 这是什么
+## 项目介绍
 
 `Sentinel-MCP` 在 AI Agent（Cursor / Claude Desktop / 自研框架等）和它要调用的本地工具
 （文件系统 / Shell / HTTP / 剪贴板…）之间插一层安全代理。每一次 `tools/call`
 都会经过 Guard 决策引擎，按可配置策略**放行 / 拒绝 / 改写参数 / 索取人工审批**。
-所有事件实时推送到一个本地 PWA dashboard，**手机锁屏也能弹出审批通知**。
+所有事件实时推送到一个本地 PWA dashboard。
 
 ```
   Cursor / Claude Desktop                       上游 MCP Server
@@ -60,7 +60,7 @@
 
 ---
 
-## 快速试用（30 秒看效果）
+## 快速试用
 
 ```bash
 git clone https://github.com/IveGotMagicBean/FeiShuAI_Competition.git
@@ -82,7 +82,7 @@ python -m pwa_dashboard.server   # http://localhost:8766
 
 ## 安装
 
-### 方式 A · 桌面安装包（最简单 · 评委推荐）
+### 方式 A · 桌面安装包
 
 到 [GitHub Releases](https://github.com/IveGotMagicBean/FeiShuAI_Competition/releases) 下载对应平台：
 
@@ -95,7 +95,7 @@ python -m pwa_dashboard.server   # http://localhost:8766
 
 双击安装，启动后自动起后端，主窗口直接是 Dashboard。
 
-### 方式 B · pip 安装（开发者）
+### 方式 B · pip 安装
 
 ```bash
 pip install "sentinel-mcp[dashboard]"   # 含 Dashboard
@@ -116,7 +116,7 @@ pip install sentinel-mcp                # 仅代理
 sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem ~/work
 ```
 
-把 Cursor / Claude Desktop 配置里指向 `npx …` 的命令换成上面这行即可，**应用零改造**。
+把 Cursor / Claude Desktop 配置里指向 `npx …` 的命令换成上面这行即可。
 
 ### 2. 启动 Dashboard 看实时事件
 
