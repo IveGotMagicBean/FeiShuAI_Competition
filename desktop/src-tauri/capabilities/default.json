@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "默认权限：tray + opener + 只允许 spawn 我们自己的 sidecar 二进制",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
+    "core:window:allow-minimize",
+    "core:app:allow-version",
+    "opener:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/sentinel-mcp-server",
+          "sidecar": true,
+          "args": []
+        }
+      ]
+    },
+    "shell:allow-kill"
+  ]
+}

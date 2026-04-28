@@ -1,0 +1,212 @@
+name: Release
+
+# 触发：push 一个 v 开头的 tag（v0.2.0 / v0.2.1-rc1 等）
+# 矩阵：mac (universal) / windows / ubuntu
+# 产物：sentinel-mcp-{version}-{platform}.{dmg|msi|AppImage}
+# 同时把 PyPI 的 wheel + sdist 也挂到 Release，方便不会用 pip 的人下载
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release as (e.g. v0.2.0)"
+        required: true
+
+permissions:
+  contents: write     # 创建 Release / 上传 asset
+  id-token: write     # PyPI Trusted Publishing
+
+jobs:
+  # ==============================================================
+  # 1. 先打 Python wheel + sdist + sidecar (Linux 顺手做)
+  # ==============================================================
+  python-and-sidecar:
+    name: Python wheel · sdist · sidecar (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install build pyinstaller
+          pip install -e ".[dashboard]"
+      - name: Build wheel + sdist
+        run: python -m build
+      - name: Build linux sidecar (PyInstaller)
+        run: |
+          pyinstaller --clean --distpath ./dist-sidecar --workpath ./build-sidecar desktop/sidecar/sentinel-mcp-server.spec
+          ls -lh dist-sidecar/
+      - name: Upload python artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+      - name: Upload linux sidecar
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-linux
+          path: dist-sidecar/sentinel-mcp-server
+
+  # ==============================================================
+  # 2. 桌面包矩阵：mac / windows / linux 各自打 sidecar + tauri build
+  # ==============================================================
+  desktop:
+    name: Desktop · ${{ matrix.label }}
+    needs: python-and-sidecar
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macos-arm64
+            os: macos-latest
+            triple: aarch64-apple-darwin
+            sidecar_ext: ""
+          - label: macos-x64
+            os: macos-13
+            triple: x86_64-apple-darwin
+            sidecar_ext: ""
+          - label: windows-x64
+            os: windows-latest
+            triple: x86_64-pc-windows-msvc
+            sidecar_ext: ".exe"
+          - label: linux-x64
+            os: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+            sidecar_ext: ""
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl wget file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.triple }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Install pyinstaller + dashboard deps
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e ".[dashboard]"
+
+      - name: Build sidecar (PyInstaller)
+        shell: bash
+        run: |
+          pyinstaller --clean --distpath ./dist-sidecar --workpath ./build-sidecar desktop/sidecar/sentinel-mcp-server.spec
+          mkdir -p desktop/src-tauri/binaries
+          cp "dist-sidecar/sentinel-mcp-server${{ matrix.sidecar_ext }}" \
+             "desktop/src-tauri/binaries/sentinel-mcp-server-${{ matrix.triple }}${{ matrix.sidecar_ext }}"
+          ls -lh desktop/src-tauri/binaries/
+
+      - name: Build Tauri bundle
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: desktop
+          args: --target ${{ matrix.triple }}
+
+      - name: Upload bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.label }}
+          path: |
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.dmg
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.msi
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.exe
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.AppImage
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.deb
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.rpm
+            desktop/src-tauri/target/${{ matrix.triple }}/release/bundle/**/*.app.tar.gz
+
+  # ==============================================================
+  # 3. 把所有 artifact 收回来，一次性挂到 GitHub Release
+  # ==============================================================
+  publish:
+    name: Publish GitHub Release
+    needs: [python-and-sidecar, desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten artifact tree
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( \
+            -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o \
+            -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o \
+            -name "*.app.tar.gz" -o -name "*.whl" -o -name "*.tar.gz" \) \
+            -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Generate checksums
+        working-directory: release-assets
+        run: |
+          (cd . && sha256sum * > SHA256SUMS.txt) || true
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Sentinel-MCP ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+          files: release-assets/*
+
+  # ==============================================================
+  # 4. PyPI 发布（用 trusted publishing — 不需要 token）
+  # ==============================================================
+  pypi:
+    name: Publish to PyPI
+    needs: python-and-sidecar
+    runs-on: ubuntu-latest
+    # 想发到 PyPI 就在仓库 Settings → Environments 创建一个 "pypi" 环境，
+    # 再到 https://pypi.org/manage/account/publishing/ 加个 trusted publisher。
+    # 没配也没关系，这一步会被 skipped。
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sentinel-mcp
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download python-dist
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true

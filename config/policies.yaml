@@ -1,0 +1,110 @@
+version: 1
+
+# ============== 检测器开关 ==============
+detectors:
+  prompt_injection:
+    enabled: true
+    threshold: 0.5          # 风险分 ≥ 0.5 → DENY
+  dlp:
+    enabled: true
+    redact_in_output: true
+    redact_in_logs: true
+    extra_patterns: {}       # 用户自定义敏感模式
+
+# ============== 工具策略 ==============
+tools:
+  read_file:
+    require_user_authz: false
+    policy: filesystem
+  write_file:
+    require_user_authz: true
+    policy: filesystem
+  list_dir:
+    require_user_authz: false
+    policy: filesystem
+  http_request:
+    require_user_authz: true
+    policy: network
+  shell_exec:
+    require_user_authz: true
+    policy: shell
+  clipboard_write:
+    require_user_authz: true
+    policy: ~
+
+# ============== 文件系统沙箱 ==============
+filesystem:
+  allowlist:
+    - "~/work/**"
+    - "~/Documents/**"
+    - "/tmp/**"
+    - "./**"                 # 工作目录默认放行
+  denylist:
+    - "~/.ssh/**"
+    - "~/.aws/**"
+    - "~/.gnupg/**"
+    - "~/.kube/**"
+    - "~/.docker/config.json"
+    - "**/.env"
+    - "**/.env.*"
+    - "**/credentials"
+    - "**/id_rsa*"
+    - "**/id_ed25519*"
+    - "/etc/passwd"
+    - "/etc/shadow"
+    - "/etc/sudoers"
+    - "/proc/**"
+
+# ============== 网络沙箱 ==============
+network:
+  allowed_domains:
+    - "api.openai.com"
+    - "api.anthropic.com"
+    - "*.feishu.cn"
+    - "*.larksuite.com"
+    - "github.com"
+    - "*.githubusercontent.com"
+    - "huggingface.co"
+  blocked_domains:
+    - "pastebin.com"
+    - "*.ngrok.io"
+    - "*.ngrok-free.app"
+    - "transfer.sh"
+    - "0x0.st"
+    - "requestbin.io"
+    - "*.requestbin.com"
+    - "webhook.site"
+    - "attacker.com"
+  block_private_ip: true     # 默认阻断 127/10/172.16/192.168/169.254 等
+
+# ============== Shell 沙箱 ==============
+shell:
+  allowlist:
+    - "ls"
+    - "pwd"
+    - "echo"
+    - "cat"
+    - "head"
+    - "tail"
+    - "wc"
+    - "git status"
+    - "git log"
+    - "git diff"
+    - "python --version"
+  blocked_patterns:
+    - "rm\\s+-rf?"
+    - "rm\\s+-fr?"
+    - "curl.*\\|.*sh"
+    - "wget.*\\|.*sh"
+    - "dd\\s+if="
+    - ":\\(\\)\\s*\\{.*\\|.*&\\s*\\}"     # fork bomb
+    - "mkfs"
+    - "chmod\\s+777"
+    - "chown\\s+root"
+
+# ============== 速率限制 ==============
+rate_limits:
+  read_file:    { window: 60, max: 50 }
+  write_file:   { window: 60, max: 20 }
+  http_request: { window: 60, max: 30 }
+  shell_exec:   { window: 60, max: 10 }

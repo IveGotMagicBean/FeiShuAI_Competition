@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Sentinel-MCP · 实时观测面板</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sentinel-MCP" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { font-family: 'PingFang SC', -apple-system, 'SF Pro Text', system-ui, sans-serif; }
+    .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .pill-allow  { background:#dcfce7; color:#166534; }
+    .pill-deny   { background:#fee2e2; color:#991b1b; }
+    .pill-ask    { background:#fef9c3; color:#854d0e; }
+    .pill-redact { background:#dbeafe; color:#1e40af; }
+    .row-deny   { border-left: 4px solid #dc2626; }
+    .row-allow  { border-left: 4px solid #16a34a; }
+    .row-ask    { border-left: 4px solid #ca8a04; }
+    .row-redact { border-left: 4px solid #2563eb; }
+    pre { white-space: pre-wrap; word-break: break-all; }
+    .blink { animation: blink 1.5s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: .3; } }
+    .flash { animation: flash 1.2s ease-out 1; }
+    @keyframes flash {
+      0%   { background:#fff7ed; box-shadow: 0 0 0 2px #fb923c inset; }
+      100% { background:#fff;    box-shadow: 0 0 0 0   transparent inset; }
+    }
+    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
+    .dot-live { background:#22c55e; box-shadow: 0 0 8px #22c55e; }
+    .dot-down { background:#ef4444; }
+    .dot-init { background:#facc15; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div x-data="dashboard()" x-init="init()" class="min-h-screen">
+    <!-- 顶部 -->
+    <header class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🛡</span>
+        <div>
+          <h1 class="text-xl font-bold">Sentinel-MCP <span x-show="canInstall" class="ml-2 text-xs font-normal cursor-pointer text-blue-600 hover:underline" @click="installPwa()">＋ 安装到桌面</span></h1>
+          <p class="text-xs text-slate-400">客户端 AI 工具调用安全与数据防护框架</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm">
+        <span class="flex items-center gap-2">
+          <span class="dot" :class="{
+              'dot-live': sseState === 'open',
+              'dot-init': sseState === 'connecting',
+              'dot-down': sseState === 'closed'
+          }"></span>
+          <span x-text="sseLabel()"></span>
+        </span>
+        <button @click="togglePushSubscribe()"
+                class="px-3 py-1 rounded text-white text-xs"
+                :class="pushSubscribed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-600 hover:bg-slate-700'"
+                x-text="pushSubscribed ? '🔔 已订阅推送' : '🔕 订阅锁屏推送'"></button>
+        <button @click="clearAll()" class="px-3 py-1 rounded bg-red-600 hover:bg-red-700">清空日志</button>
+      </div>
+    </header>
+
+    <!-- 统计卡片 -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-4 px-6 py-4">
+      <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-xs text-slate-500">总事件</p>
+        <p class="text-2xl font-bold" x-text="stats.total ?? 0"></p>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-xs text-slate-500">高风险告警</p>
+        <p class="text-2xl font-bold text-red-600" x-text="stats.high_risk_alerts ?? 0"></p>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-xs text-slate-500">放行</p>
+        <p class="text-2xl font-bold text-green-600" x-text="(stats.by_decision?.allow) ?? 0"></p>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-xs text-slate-500">拦截</p>
+        <p class="text-2xl font-bold text-red-600" x-text="(stats.by_decision?.deny) ?? 0"></p>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-xs text-slate-500">脱敏</p>
+        <p class="text-2xl font-bold text-blue-600" x-text="(stats.by_decision?.redact) ?? 0"></p>
+      </div>
+    </section>
+
+    <!-- 审批面板：tab 切换「待审批 | 历史」-->
+    <section class="px-6 mb-3" x-show="pending.length > 0 || approvalsTab === 'history'">
+      <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg shadow-sm p-3">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <h2 class="text-sm font-semibold text-amber-800 flex items-center gap-2">
+              <span class="text-base">🔐</span> 审批
+            </h2>
+            <div class="flex bg-white rounded border border-amber-200 overflow-hidden text-xs">
+              <button @click="approvalsTab='pending'"
+                      class="px-3 py-1"
+                      :class="approvalsTab==='pending' ? 'bg-amber-200 text-amber-900' : 'text-amber-700 hover:bg-amber-100'">
+                待审批 <span x-text="`(${pending.length})`"></span>
+              </button>
+              <button @click="loadHistory(); approvalsTab='history'"
+                      class="px-3 py-1 border-l border-amber-200"
+                      :class="approvalsTab==='history' ? 'bg-amber-200 text-amber-900' : 'text-amber-700 hover:bg-amber-100'">
+                历史
+              </button>
+            </div>
+          </div>
+          <span class="text-xs text-amber-600 font-normal" x-show="approvalsTab==='pending'">
+            Agent 想调用敏感工具，等你拍板
+          </span>
+        </div>
+
+        <!-- 待审批列表 -->
+        <div x-show="approvalsTab==='pending'">
+        <template x-if="pending.length === 0">
+          <p class="text-xs text-slate-500 italic px-1">暂无待审批 · 一切如常 ✨</p>
+        </template>
+        <ul class="space-y-2">
+          <template x-for="p in pending" :key="p.id">
+            <li class="bg-white rounded p-3 text-sm border border-amber-200">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded" x-text="p.tool_name"></span>
+                  <span class="text-xs text-slate-500" x-text="formatTime(p.created_at)"></span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700"
+                        x-text="`risk ${(p.risk_score ?? 0).toFixed(2)}`"></span>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="decide(p.id, true)"
+                          class="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs">
+                    ✓ 批准
+                  </button>
+                  <button @click="decide(p.id, false)"
+                          class="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs">
+                    ✗ 拒绝
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs text-slate-700 mt-1" x-text="p.reason"></p>
+              <details class="mt-1">
+                <summary class="text-xs text-slate-400 cursor-pointer">参数 / 命中规则</summary>
+                <pre class="text-xs bg-slate-50 p-2 mt-1 rounded" x-text="JSON.stringify(p.args, null, 2)"></pre>
+                <template x-if="(p.triggered || []).length > 0">
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    <template x-for="r in p.triggered">
+                      <span class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-1 rounded" x-text="r"></span>
+                    </template>
+                  </div>
+                </template>
+              </details>
+            </li>
+          </template>
+        </ul>
+        </div>
+
+        <!-- 审批历史 -->
+        <div x-show="approvalsTab==='history'">
+          <template x-if="history.length === 0">
+            <p class="text-xs text-slate-500 italic px-1">暂无历史记录</p>
+          </template>
+          <ul class="space-y-1.5">
+            <template x-for="h in history" :key="h.id">
+              <li class="bg-white rounded p-2.5 text-xs border border-slate-200 flex items-center gap-3 flex-wrap">
+                <span class="px-2 py-0.5 rounded font-mono text-[11px]"
+                      :class="{
+                        'bg-emerald-100 text-emerald-800': h.status === 'approved',
+                        'bg-red-100 text-red-700': h.status === 'denied',
+                        'bg-slate-100 text-slate-600': h.status === 'expired',
+                        'bg-amber-100 text-amber-800': h.status === 'pending',
+                      }"
+                      x-text="h.status"></span>
+                <span class="font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded" x-text="h.tool_name"></span>
+                <span class="text-slate-500" x-text="formatTime(h.created_at)"></span>
+                <span class="text-slate-500" x-show="h.decided_at">→</span>
+                <span class="text-slate-500" x-show="h.decided_at" x-text="formatTime(h.decided_at) + ' · ' + (h.decided_by || '')"></span>
+                <span class="text-slate-400 ml-auto" x-text="h.reason"></span>
+              </li>
+            </template>
+          </ul>
+          <button @click="loadHistory()"
+                  class="mt-2 text-xs text-amber-700 hover:underline">⟳ 刷新历史</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 过滤栏 -->
+    <section class="px-6 mb-3 flex flex-wrap gap-2 items-center text-sm">
+      <label>决策：
+        <select x-model="filters.decision" @change="reload()" class="border rounded px-2 py-1">
+          <option value="">全部</option>
+          <option value="allow">allow</option>
+          <option value="deny">deny</option>
+          <option value="ask_user">ask_user</option>
+          <option value="redact">redact</option>
+        </select>
+      </label>
+      <label>最低风险分：
+        <input type="number" step="0.1" min="0" max="1" x-model.number="filters.min_risk" @change="reload()" class="border rounded px-2 py-1 w-20" />
+      </label>
+      <label>工具：
+        <input type="text" x-model="filters.tool_name" @keyup.enter="reload()" placeholder="read_file..." class="border rounded px-2 py-1" />
+      </label>
+      <button @click="reload()" class="px-3 py-1 bg-slate-800 text-white rounded">刷新</button>
+    </section>
+
+    <!-- Top 工具 -->
+    <section class="px-6 mb-3" x-show="(stats.by_tool || []).length > 0">
+      <p class="text-xs text-slate-500 mb-1">Top 调用工具</p>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="t in (stats.by_tool || [])" :key="t.tool_name">
+          <span class="bg-white border border-slate-200 rounded px-2 py-1 text-xs">
+            <b x-text="t.tool_name"></b>
+            <span class="text-slate-500" x-text="`× ${t.count}`"></span>
+          </span>
+        </template>
+      </div>
+    </section>
+
+    <!-- 时间线 -->
+    <section class="px-6 pb-10">
+      <h2 class="text-sm font-semibold mb-2 text-slate-600">事件时间线</h2>
+      <template x-if="events.length === 0">
+        <p class="text-slate-400 italic">暂无事件。运行 examples/protected_agent.py 触发一些调用试试。</p>
+      </template>
+      <ul class="space-y-2">
+        <template x-for="ev in events" :key="ev.id">
+          <li class="bg-white rounded-lg shadow-sm p-3 text-sm"
+              :class="[`row-${ev.decision === 'ask_user' ? 'ask' : ev.decision}`, ev._fresh ? 'flash' : '']">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span :class="`pill pill-${ev.decision === 'ask_user' ? 'ask' : ev.decision}`" x-text="ev.decision"></span>
+                <span class="font-mono text-xs text-slate-500" x-text="ev.event_type"></span>
+                <span class="font-semibold" x-text="ev.tool_name"></span>
+                <span class="text-xs text-slate-400" x-text="formatTime(ev.timestamp)"></span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded"
+                    :class="ev.risk_score >= 0.7 ? 'bg-red-100 text-red-700' : (ev.risk_score >= 0.3 ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-600')"
+                    x-text="`risk ${(ev.risk_score ?? 0).toFixed(2)}`"></span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1" x-text="ev.reason"></p>
+            <details class="mt-1">
+              <summary class="text-xs text-slate-400 cursor-pointer">参数 / 命中规则</summary>
+              <pre class="text-xs bg-slate-50 p-2 mt-1 rounded" x-text="JSON.stringify(ev.args, null, 2)"></pre>
+              <template x-if="(ev.triggered_rules || []).length > 0">
+                <div class="mt-1 flex flex-wrap gap-1">
+                  <template x-for="r in ev.triggered_rules">
+                    <span class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-1 rounded" x-text="r"></span>
+                  </template>
+                </div>
+              </template>
+            </details>
+          </li>
+        </template>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    let _deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      _deferredPrompt = e;
+      window.dispatchEvent(new CustomEvent('pwa-can-install'));
+    });
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW reg failed', err));
+      });
+    }
+
+    function dashboard() {
+      return {
+        events: [],
+        pending: [],               // 待审批队列
+        history: [],               // 审批历史（approved/denied/expired）
+        approvalsTab: 'pending',   // 'pending' | 'history'
+        stats: {},
+        filters: { decision: '', min_risk: 0.0, tool_name: '' },
+        canInstall: false,
+        sseState: 'connecting',   // 'connecting' | 'open' | 'closed'
+        _es: null,                 // EventSource 实例
+        pushSubscribed: false,     // Web Push 订阅状态
+
+        async installPwa() {
+          if (!_deferredPrompt) {
+            alert('当前浏览器/页面尚未触发 PWA 安装事件。\nMac Chrome：右上角地址栏 ⊕ 图标；\niOS Safari：分享 → 添加到主屏幕。');
+            return;
+          }
+          _deferredPrompt.prompt();
+          await _deferredPrompt.userChoice;
+          _deferredPrompt = null;
+          this.canInstall = false;
+        },
+
+        sseLabel() {
+          if (this.sseState === 'open') return '实时连接中';
+          if (this.sseState === 'connecting') return '正在连接...';
+          return '连接断开（重试中）';
+        },
+
+        // 仅在用户改过滤条件时调用（SSE 不带过滤参数，统一在客户端做）
+        async reload() {
+          const params = new URLSearchParams();
+          params.set('limit', '200');
+          if (this.filters.decision) params.set('decision', this.filters.decision);
+          if (this.filters.min_risk) params.set('min_risk', this.filters.min_risk);
+          if (this.filters.tool_name) params.set('tool_name', this.filters.tool_name);
+          const [evRes, stRes, apRes] = await Promise.all([
+            fetch('/api/events?' + params.toString()),
+            fetch('/api/stats'),
+            fetch('/api/approvals?only_pending=true')
+          ]);
+          this.events = (await evRes.json()).events;
+          this.stats = await stRes.json();
+          this.pending = (await apRes.json()).approvals || [];
+        },
+
+        async decide(pid, approved) {
+          try {
+            const r = await fetch(`/api/approvals/${pid}/decide`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ approved, by: 'dashboard' })
+            });
+            if (!r.ok) {
+              const detail = await r.text();
+              alert(`审批失败：${detail}`);
+            } else {
+              // 乐观去除：等下 SSE 的 decided 事件也会兜底刷新
+              this.pending = this.pending.filter(x => x.id !== pid);
+            }
+          } catch (e) {
+            alert(`网络异常：${e}`);
+          }
+        },
+
+        async refreshStats() {
+          try {
+            this.stats = await (await fetch('/api/stats')).json();
+          } catch (_) { /* 忽略瞬时网络抖动 */ }
+        },
+
+        // SSE 主推流：拿到事件 → 去重 → 插队头 → 触发高亮
+        connectSSE() {
+          if (this._es) { try { this._es.close(); } catch(_) {} }
+          this.sseState = 'connecting';
+          const es = new EventSource('/api/events/stream');
+          this._es = es;
+
+          es.addEventListener('hello', () => {
+            this.sseState = 'open';
+          });
+
+          es.addEventListener('event', (msg) => {
+            this.sseState = 'open';
+            let evt;
+            try { evt = JSON.parse(msg.data); } catch (e) { return; }
+            // SSE 一上来会推一次 backlog；我们按 id 去重避免和初始 reload 重复
+            if (this.events.some(e => e.id === evt.id)) return;
+            // 客户端做过滤（避免 SSE 也得带 query）
+            if (this.filters.decision && evt.decision !== this.filters.decision) return;
+            if (this.filters.min_risk && (evt.risk_score ?? 0) < this.filters.min_risk) return;
+            if (this.filters.tool_name && !(evt.tool_name || '').includes(this.filters.tool_name)) return;
+            evt._fresh = true;
+            this.events.unshift(evt);
+            if (this.events.length > 500) this.events.length = 500;
+            setTimeout(() => {
+              const i = this.events.findIndex(e => e.id === evt.id);
+              if (i >= 0) this.events[i] = { ...this.events[i], _fresh: false };
+            }, 1500);
+          });
+
+          es.addEventListener('pending', (msg) => {
+            try {
+              const p = JSON.parse(msg.data);
+              if (this.pending.some(x => x.id === p.id)) return;
+              this.pending.unshift(p);
+              // 浏览器原生通知（如果用户已授权 Notification 权限）
+              if (window.Notification && Notification.permission === 'granted') {
+                new Notification(`Sentinel-MCP · 待授权：${p.tool_name}`, {
+                  body: p.reason || '点击 dashboard 处理',
+                  icon: '/icon-192.png',
+                  tag: p.id,
+                });
+              }
+            } catch (_) {}
+          });
+
+          es.addEventListener('decided', (msg) => {
+            try {
+              const p = JSON.parse(msg.data);
+              this.pending = this.pending.filter(x => x.id !== p.id);
+              // 同步进历史，置顶；去重防 SSE 回放
+              if (!this.history.some(x => x.id === p.id)) {
+                this.history.unshift(p);
+                if (this.history.length > 200) this.history.length = 200;
+              }
+            } catch (_) {}
+          });
+
+          es.onerror = () => {
+            this.sseState = 'closed';
+            // EventSource 会自动重连，这里只更新状态；UI 显示「重试中」
+          };
+        },
+
+        async requestNotifyPermission() {
+          if (!window.Notification) return;
+          if (Notification.permission === 'default') {
+            try { await Notification.requestPermission(); } catch (_) {}
+          }
+        },
+
+        // ---- Web Push（VAPID 直推 FCM/Mozilla autopush）----
+        _b64ToUint8(b64) {
+          const pad = '='.repeat((4 - b64.length % 4) % 4);
+          const s = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+          const raw = atob(s);
+          const buf = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
+          return buf;
+        },
+
+        async refreshPushState() {
+          try {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            this.pushSubscribed = !!sub;
+          } catch (_) { this.pushSubscribed = false; }
+        },
+
+        async togglePushSubscribe() {
+          if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            alert('当前浏览器不支持 Web Push'); return;
+          }
+          if (Notification.permission !== 'granted') {
+            const r = await Notification.requestPermission();
+            if (r !== 'granted') { alert('请先允许通知'); return; }
+          }
+          const reg = await navigator.serviceWorker.ready;
+          let sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            // 取消订阅
+            try { await fetch('/api/push/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (_) {}
+            await sub.unsubscribe();
+            this.pushSubscribed = false;
+            return;
+          }
+          try {
+            const res = await fetch('/api/push/vapid-public-key');
+            const { key } = await res.json();
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: this._b64ToUint8(key),
+            });
+            await fetch('/api/push/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(sub),
+            });
+            this.pushSubscribed = true;
+          } catch (e) {
+            console.error('push subscribe failed', e);
+            alert('订阅失败：' + e.message);
+          }
+        },
+
+        async loadHistory() {
+          try {
+            const r = await fetch('/api/approvals?only_pending=false&limit=100');
+            const j = await r.json();
+            // 只保留已决断的（pending 已经在「待审批」面板里）
+            this.history = (j.approvals || []).filter(x => x.status !== 'pending');
+          } catch (_) {}
+        },
+
+        async clearAll() {
+          if (!confirm('清空所有审计日志？')) return;
+          await fetch('/api/clear', { method: 'POST' });
+          this.events = [];
+          this.refreshStats();
+        },
+
+        formatTime(ts) {
+          const d = new Date(ts * 1000);
+          return d.toLocaleTimeString('zh-CN', { hour12: false }) +
+            '.' + String(d.getMilliseconds()).padStart(3, '0');
+        },
+
+        init() {
+          this.reload();              // 1) 一次拉满（含历史 200 条 + stats + pending）
+          this.connectSSE();          // 2) 接 SSE 增量
+          setInterval(() => this.refreshStats(), 3000);  // 3) stats 单独慢轮询
+          this.requestNotifyPermission();   // 4) 申请桌面通知（拒绝也无所谓）
+          this.refreshPushState();           // 5) 同步 Web Push 订阅状态
+          this.loadHistory();                // 6) 预拉一次审批历史
+          window.addEventListener('pwa-can-install', () => { this.canInstall = true; });
+        }
+      };
+    }
+  </script>
+</body>
+</html>

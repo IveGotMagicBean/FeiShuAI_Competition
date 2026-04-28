@@ -1,0 +1,12 @@
+# Tauri / Rust 构建产物
+src-tauri/target/
+src-tauri/gen/
+src-tauri/Cargo.lock
+
+# 平台特定
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

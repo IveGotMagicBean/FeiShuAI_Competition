@@ -1,0 +1,75 @@
+# ============================================================
+# Sentinel-MCP · git 忽略清单
+# ============================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ---- 虚拟环境 ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Python 构建产物（CI 重新生成）----
+build/
+build-sidecar/
+dist/
+dist-sidecar/
+
+# ---- Tauri / Rust ----
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+# Cargo.lock 要提交（二进制 crate 的可重现构建惯例）
+desktop/src-tauri/binaries/sentinel-mcp-server-*
+
+# ---- 运行时 / 数据 ----
+data/sentinel.db
+data/sentinel.db-shm
+data/sentinel.db-wal
+data/attack_audit.db
+data/attack_audit.db-shm
+data/attack_audit.db-wal
+data/vapid_keys.json
+# 攻击报告自动产出，但保留作为参考；如要忽略改成 data/attack_report.*
+# data/attack_report.md
+# data/attack_report.json
+
+# ---- 编辑器 / IDE ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- 平台 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 日志 ----
+*.log
+logs/
+
+# ---- 临时文件 ----
+*.bak
+*.tmp
+*.orig
+.*.swp
+
+# ---- 节点（Bubblewrap / TWA 用得到）----
+node_modules/
+*.keystore
+twa-manifest.json

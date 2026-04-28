@@ -1,0 +1,36 @@
+{
+  "_comment": "macOS: ~/Library/Application Support/Claude/claude_desktop_config.json | Windows: %APPDATA%/Claude/claude_desktop_config.json",
+  "_comment_2": "把 'sentinel-mcp' 替换成实际可执行路径；W1 末发布到 PyPI 后可直接用 'sentinel-mcp'，目前需要 'python -m sentinel_mcp.cli'",
+
+  "mcpServers": {
+    "filesystem-guarded": {
+      "command": "python",
+      "args": [
+        "-m", "sentinel_mcp.cli",
+        "wrap",
+        "--config", "/PATH/TO/REPO/0425_test01/config/policies.yaml",
+        "--audit-db", "/PATH/TO/REPO/data/sentinel_mcp_audit.db",
+        "--",
+        "npx", "-y", "@modelcontextprotocol/server-filesystem", "/PATH/TO/YOUR/work"
+      ],
+      "env": {
+        "PYTHONPATH": "/PATH/TO/REPO/0427_test01:/PATH/TO/REPO/0425_test01"
+      }
+    },
+
+    "github-guarded": {
+      "command": "python",
+      "args": [
+        "-m", "sentinel_mcp.cli",
+        "wrap",
+        "--config", "/PATH/TO/REPO/0425_test01/config/policies.yaml",
+        "--",
+        "npx", "-y", "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "PYTHONPATH": "/PATH/TO/REPO/0427_test01:/PATH/TO/REPO/0425_test01",
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "REPLACE_ME"
+      }
+    }
+  }
+}
