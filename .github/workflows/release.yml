@@ -127,6 +127,13 @@ jobs:
              "desktop/src-tauri/binaries/sentinel-mcp-server-${{ matrix.triple }}${{ matrix.sidecar_ext }}"
           ls -lh desktop/src-tauri/binaries/
 
+      # Tauri 打包要 icon.icns（macOS）/ icon.ico（Windows）/ 各尺寸 PNG（Linux），
+      # git 仓库里只存了 icon.png，其它格式现做（saves 时 .icns 是 mac-only 工具产物）
+      - name: Generate platform icons
+        shell: bash
+        working-directory: desktop
+        run: npx -y @tauri-apps/cli@v2 icon ./src-tauri/icons/icon.png
+
       - name: Build Tauri bundle
         uses: tauri-apps/tauri-action@v0
         with:
