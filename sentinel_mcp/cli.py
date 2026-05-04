@@ -58,6 +58,22 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     sub.add_parser("version", help="显示版本")
+
+    # hook-check：Claude Code PreToolUse hook 入口（单进程模式，stdin 收 JSON 决策一次）
+    hook = sub.add_parser(
+        "hook-check",
+        help="作为 Claude Code 等客户端的 PreToolUse hook 被调用 — 从 stdin 读 JSON，按 policy 拒绝/放行",
+    )
+    hook.add_argument("--config", default=str(_DEFAULT_POLICY), help="Guard 策略 YAML")
+    hook.add_argument(
+        "--audit-db",
+        default=os.environ.get("SENTINEL_DB", str(_DEFAULT_DB)),
+        help="审计 SQLite 路径",
+    )
+    hook.add_argument(
+        "--structured-output", action="store_true",
+        help="输出 JSON 而不仅是退出码（Claude Code v0.3+ 支持）",
+    )
     return p
 
 
@@ -69,6 +85,14 @@ def main(argv: list[str] | None = None) -> int:
         from sentinel_mcp import __version__
         print(f"sentinel-mcp {__version__}")
         return 0
+
+    if args.cmd == "hook-check":
+        from sentinel_mcp.hook import run_hook_check
+        return run_hook_check(
+            config_path=args.config,
+            audit_db=args.audit_db,
+            structured_output=args.structured_output,
+        )
 
     upstream = list(args.upstream or [])
     if upstream and upstream[0] == "--":

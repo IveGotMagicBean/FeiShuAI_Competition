@@ -3,265 +3,1642 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Sentinel-MCP · 实时观测面板</title>
+  <title>Sentinel-MCP · Dashboard</title>
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Sentinel-MCP" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- 字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Alpine -->
+  <script defer src="/static/alpine.min.js"></script>
+
   <style>
-    body { font-family: 'PingFang SC', -apple-system, 'SF Pro Text', system-ui, sans-serif; }
-    .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-    .pill-allow  { background:#dcfce7; color:#166534; }
-    .pill-deny   { background:#fee2e2; color:#991b1b; }
-    .pill-ask    { background:#fef9c3; color:#854d0e; }
-    .pill-redact { background:#dbeafe; color:#1e40af; }
-    .row-deny   { border-left: 4px solid #dc2626; }
-    .row-allow  { border-left: 4px solid #16a34a; }
-    .row-ask    { border-left: 4px solid #ca8a04; }
-    .row-redact { border-left: 4px solid #2563eb; }
-    pre { white-space: pre-wrap; word-break: break-all; }
-    .blink { animation: blink 1.5s ease-in-out infinite; }
-    @keyframes blink { 50% { opacity: .3; } }
-    .flash { animation: flash 1.2s ease-out 1; }
-    @keyframes flash {
-      0%   { background:#fff7ed; box-shadow: 0 0 0 2px #fb923c inset; }
-      100% { background:#fff;    box-shadow: 0 0 0 0   transparent inset; }
+    /* ============ 设计 token：Linear / Vercel 风 ============ */
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --surface-2: #f4f4f5;
+      --surface-3: #e4e4e7;
+      --border: #e4e4e7;
+      --border-strong: #a1a1aa;
+      --text: #18181b;
+      --text-2: #52525b;
+      --text-3: #71717a;
+      --text-4: #a1a1aa;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-bg: #eef2ff;
+      --accent-fg: #4338ca;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --info: #3b82f6;
+      --info-bg: #eff6ff;
+      --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 8px rgba(0,0,0,.04), 0 2px 4px rgba(0,0,0,.04);
+      --shadow-lg: 0 12px 24px rgba(0,0,0,.06), 0 4px 8px rgba(0,0,0,.04);
+      --radius-sm: 4px;
+      --radius: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
     }
-    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
-    .dot-live { background:#22c55e; box-shadow: 0 0 8px #22c55e; }
-    .dot-down { background:#ef4444; }
-    .dot-init { background:#facc15; }
+    html.dark {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-2: #27272a;
+      --surface-3: #3f3f46;
+      --border: #27272a;
+      --border-strong: #52525b;
+      --text: #fafafa;
+      --text-2: #d4d4d8;
+      --text-3: #a1a1aa;
+      --text-4: #71717a;
+      --accent: #818cf8;
+      --accent-hover: #a5b4fc;
+      --accent-bg: #1e1b4b;
+      --accent-fg: #c7d2fe;
+      --success: #34d399;
+      --success-bg: #022c22;
+      --warning: #fbbf24;
+      --warning-bg: #2a1f08;
+      --danger: #f87171;
+      --danger-bg: #2c0e0e;
+      --info: #60a5fa;
+      --info-bg: #082145;
+      --shadow-xs: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+      --shadow-md: 0 4px 8px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.4);
+      --shadow-lg: 0 12px 24px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.4);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) {
+        --bg: #09090b; --surface: #18181b; --surface-2: #27272a; --surface-3: #3f3f46;
+        --border: #27272a; --border-strong: #52525b;
+        --text: #fafafa; --text-2: #d4d4d8; --text-3: #a1a1aa; --text-4: #71717a;
+        --accent: #818cf8; --accent-hover: #a5b4fc; --accent-bg: #1e1b4b; --accent-fg: #c7d2fe;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'DM Sans', 'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background .2s, color .2s;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre, .mono { font-family: 'DM Mono', 'SF Mono', Menlo, Consolas, monospace; }
+    [x-cloak] { display: none !important; }
+
+    /* ============ Layout: app shell ============ */
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .sidebar-header {
+      padding: 18px 18px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 9px;
+      color: var(--text); font-size: 15px; font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .logo-mark {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: white;
+    }
+    .logo-mark svg { width: 16px; height: 16px; }
+    .logo-tag {
+      font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-3); margin-left: auto;
+    }
+    .sidebar-nav {
+      flex: 1; padding: 12px 10px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 10px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500;
+      color: var(--text-2);
+      text-align: left; width: 100%;
+      transition: background .12s, color .12s;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active { background: var(--accent-bg); color: var(--accent-fg); }
+    .nav-item .icon { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.75; }
+    .nav-item .nav-badge {
+      margin-left: auto; min-width: 18px; height: 18px;
+      padding: 0 5px; border-radius: 9px;
+      background: var(--danger); color: white;
+      font-size: 10px; font-weight: 600; line-height: 18px; text-align: center;
+    }
+    .nav-section-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-4); padding: 14px 10px 6px;
+    }
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .sidebar-mode {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: var(--radius);
+      font-size: 12px; color: var(--text-2);
+      background: var(--surface-2);
+    }
+    .mode-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .mode-dot.active { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+    .mode-dot.passive { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,.18); }
+    .mode-dot.off { background: var(--text-4); }
+    .sidebar-footer-actions { display: flex; gap: 6px; }
+
+    /* ============ Main + topbar ============ */
+    .main {
+      min-width: 0;
+      display: flex; flex-direction: column;
+      background: var(--bg);
+    }
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 5;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: rgba(255,255,255,.85);
+    }
+    html.dark .topbar { background: rgba(24,24,27,.85); }
+    .topbar h1 {
+      font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--text);
+    }
+    .topbar-subtitle {
+      font-size: 12px; color: var(--text-3); margin-top: 2px;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* SSE 状态指示 */
+    .sse-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 9px; border-radius: 99px;
+      font-size: 11px; color: var(--text-3); font-weight: 500;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+    .sse-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sse-dot.live { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,.18); animation: breathe 2s ease-in-out infinite; }
+    .sse-dot.connecting { background: var(--warning); }
+    .sse-dot.closed { background: var(--danger); }
+    @keyframes breathe {
+      0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+      50% { box-shadow: 0 0 0 6px rgba(16,185,129,.06); }
+    }
+
+    /* ============ Mode segmented control ============ */
+    .seg {
+      display: inline-flex;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2px;
+    }
+    .seg button {
+      padding: 4px 11px; border-radius: 4px;
+      font-size: 12px; font-weight: 500;
+      color: var(--text-3);
+      transition: all .12s;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .seg button:hover:not(.active) { color: var(--text); }
+    .seg button.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow-xs);
+    }
+
+    /* ============ 内容区 ============ */
+    .content {
+      padding: 28px 32px 80px;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .content > section[x-show] { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(4px);} to {opacity:1;transform:none;} }
+
+    /* ============ 通用组件 ============ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xs);
+    }
+    .card-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap;
+    }
+    .card-header h3 {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      letter-spacing: -0.005em;
+    }
+    .card-header p {
+      font-size: 12px; color: var(--text-3); margin-top: 2px;
+    }
+    .card-body { padding: 18px; }
+    .card-body.tight { padding: 14px 18px; }
+
+    /* 按钮 */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 32px; padding: 0 12px;
+      font-size: 13px; font-weight: 500;
+      border-radius: var(--radius);
+      transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn .icon { width: 14px; height: 14px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-2); }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #059669; }
+    .btn-icon { width: 32px; padding: 0; }
+    .btn-sm { height: 26px; padding: 0 9px; font-size: 12px; }
+    .btn-sm .icon { width: 13px; height: 13px; }
+    .btn-lg { height: 38px; padding: 0 16px; font-size: 14px; }
+
+    /* Input / select / textarea */
+    .input, .select, .textarea {
+      height: 32px; padding: 0 10px;
+      font-size: 13px; font-family: inherit;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      transition: border-color .12s, box-shadow .12s;
+      width: 100%;
+    }
+    .textarea { height: auto; padding: 8px 10px; min-height: 64px; resize: vertical; }
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+    }
+    .input::placeholder, .textarea::placeholder { color: var(--text-4); }
+    .input.mono, .textarea.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+    label { font-size: 12px; font-weight: 500; color: var(--text-2); display: block; margin-bottom: 5px; }
+
+    /* Pill / badge */
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 11px; font-weight: 500;
+      white-space: nowrap;
+    }
+    .pill-success { background: var(--success-bg); color: var(--success); }
+    .pill-warning { background: var(--warning-bg); color: var(--warning); }
+    .pill-danger  { background: var(--danger-bg);  color: var(--danger); }
+    .pill-info    { background: var(--info-bg);    color: var(--info); }
+    .pill-mute    { background: var(--surface-2);  color: var(--text-3); }
+    .pill-accent  { background: var(--accent-bg);  color: var(--accent-fg); }
+
+    /* Table */
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table thead th {
+      text-align: left; padding: 10px 16px;
+      font-size: 11px; font-weight: 600; color: var(--text-3);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .table tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--text);
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover { background: var(--surface-2); }
+    .table tbody tr.row-deny td { box-shadow: inset 3px 0 0 var(--danger); }
+    .table tbody tr.row-allow td { box-shadow: inset 3px 0 0 var(--success); }
+    .table tbody tr.row-ask td { box-shadow: inset 3px 0 0 var(--warning); }
+    .table tbody tr.row-redact td { box-shadow: inset 3px 0 0 var(--info); }
+    .table tbody tr.flash td { background: var(--accent-bg); transition: background 1.5s; }
+
+    /* KPI cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .kpi:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .kpi-label {
+      font-size: 11px; font-weight: 500; color: var(--text-3);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .kpi-label .icon { width: 14px; height: 14px; }
+    .kpi-num {
+      font-size: 28px; font-weight: 600; color: var(--text);
+      letter-spacing: -0.02em; line-height: 1.1;
+      margin-top: 8px;
+    }
+    .kpi-sub {
+      font-size: 12px; color: var(--text-3); margin-top: 4px;
+    }
+
+    /* Quick action card */
+    .qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .qa-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      text-align: left;
+      transition: all .15s;
+      cursor: pointer;
+    }
+    .qa-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+    .qa-icon-wrap {
+      width: 28px; height: 28px;
+      border-radius: var(--radius);
+      background: var(--accent-bg);
+      color: var(--accent-fg);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+    .qa-icon-wrap .icon { width: 16px; height: 16px; stroke-width: 1.75; }
+    .qa-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .qa-desc { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+
+    /* 客户端 logo / table 内迷你 icon */
+    .client-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 11px; font-weight: 600;
+      font-family: 'DM Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    /* Tabs (sub-tabs in Settings) */
+    .tabs {
+      display: flex; gap: 4px;
+      padding: 4px; background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tabs button {
+      padding: 6px 12px; border-radius: 4px;
+      font-size: 12px; font-weight: 500; color: var(--text-3);
+      transition: all .12s;
+      display: inline-flex; align-items: center; gap: 5px;
+      white-space: nowrap;
+    }
+    .tabs button .icon { width: 13px; height: 13px; }
+    .tabs button:hover:not(.active) { color: var(--text); }
+    .tabs button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs); }
+
+    /* Strength preset buttons */
+    .strength-btns {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 8px; margin-bottom: 14px;
+    }
+    .strength-btn {
+      padding: 12px 10px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      text-align: center;
+      transition: all .12s;
+    }
+    .strength-btn .strength-emoji { font-size: 18px; margin-bottom: 4px; }
+    .strength-btn .strength-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .strength-btn:hover:not(.active) { border-color: var(--border-strong); }
+    .strength-btn.active { border-color: var(--accent); background: var(--accent-bg); }
+    .strength-btn.active .strength-name { color: var(--accent-fg); }
+    @media (max-width: 768px) { .strength-btns { grid-template-columns: repeat(3, 1fr); } }
+
+    /* Approval card (pending) */
+    .approval-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--warning);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .approval-card-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .approval-card .tool-name {
+      font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600;
+      background: var(--warning-bg); color: var(--warning);
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .approval-card .reason { font-size: 13px; color: var(--text-2); margin-bottom: 10px; line-height: 1.6; }
+    .approval-rules {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .approval-rule {
+      font-size: 11px; padding: 3px 8px; border-radius: 4px;
+      background: var(--danger-bg); color: var(--danger);
+    }
+    .approval-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Onboarding Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(15,15,20,.55);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      max-width: 540px; width: 100%;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .modal-hero {
+      padding: 28px 32px 22px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: white;
+    }
+    .modal-hero .modal-icon { font-size: 32px; margin-bottom: 8px; }
+    .modal-hero h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+    .modal-hero p { font-size: 13px; color: rgba(255,255,255,.85); margin-top: 6px; }
+    .modal-body { padding: 24px 32px; }
+    .modal-footer {
+      padding: 14px 32px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface-2);
+    }
+
+    /* Watch toast */
+    .watch-toast {
+      position: fixed; top: 76px; right: 32px;
+      background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--warning);
+      border-radius: var(--radius-lg); padding: 12px 16px;
+      box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; gap: 12px;
+      max-width: 480px; z-index: 50;
+      animation: slideIn .25s ease;
+    }
+    @keyframes slideIn { from {transform:translateX(20px);opacity:0;} to {transform:none;opacity:1;} }
+    .watch-toast .toast-msg { font-size: 13px; color: var(--text); flex: 1; }
+
+    /* MOBILE BOTTOM TAB BAR (hidden on desktop) */
+    .mobile-tabbar {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 30;
+      box-shadow: var(--shadow-md);
+    }
+    .mobile-tabbar-grid { display: grid; grid-template-columns: repeat(5, 1fr); }
+    .mobile-tabbar button {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 6px 4px;
+      font-size: 10px; font-weight: 500; color: var(--text-3);
+      position: relative;
+    }
+    .mobile-tabbar button .icon { width: 22px; height: 22px; stroke-width: 1.75; }
+    .mobile-tabbar button.active { color: var(--accent); }
+    .mobile-tabbar button .nav-badge {
+      position: absolute; top: 2px; right: 25%;
+      min-width: 16px; height: 16px;
+      background: var(--danger); color: white;
+      font-size: 9px; font-weight: 600;
+      border-radius: 8px; padding: 0 4px;
+      line-height: 16px; text-align: center;
+    }
+
+    /* Mobile topbar (used when sidebar is hidden) */
+    .mobile-topbar { display: none; }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 980px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .qa-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .mobile-tabbar { display: block; }
+      .mobile-topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+      .topbar { display: none; }
+      .content { padding: 16px; padding-bottom: 96px; }
+      .qa-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .kpi-num { font-size: 24px; }
+      .card-header { padding: 14px 16px; }
+      .card-body { padding: 16px; }
+      .table thead { display: none; }
+      .table tbody td { padding: 10px 14px; }
+      .strength-btns { grid-template-columns: repeat(2, 1fr); }
+      .approval-actions .btn { flex: 1 0 calc(50% - 4px); }
+      .watch-toast { top: 70px; right: 12px; left: 12px; max-width: none; }
+    }
+
+    /* hidden util */
+    .show-mobile { display: none; }
+    @media (max-width: 768px) { .show-mobile { display: inline-flex; } .hide-mobile { display: none !important; } }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <div x-data="dashboard()" x-init="init()" class="min-h-screen">
-    <!-- 顶部 -->
-    <header class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">🛡</span>
-        <div>
-          <h1 class="text-xl font-bold">Sentinel-MCP <span x-show="canInstall" class="ml-2 text-xs font-normal cursor-pointer text-blue-600 hover:underline" @click="installPwa()">＋ 安装到桌面</span></h1>
-          <p class="text-xs text-slate-400">客户端 AI 工具调用安全与数据防护框架</p>
+<body>
+  <div x-data="dashboard()" x-init="init()" class="app">
+
+    <!-- ============ DESKTOP SIDEBAR ============ -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <span>Sentinel</span>
+          <span class="logo-tag">v0.3</span>
         </div>
       </div>
-      <div class="flex items-center gap-4 text-sm">
-        <span class="flex items-center gap-2">
-          <span class="dot" :class="{
-              'dot-live': sseState === 'open',
-              'dot-init': sseState === 'connecting',
-              'dot-down': sseState === 'closed'
-          }"></span>
-          <span x-text="sseLabel()"></span>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item" :class="{active: activeTab==='overview'}" @click="activeTab='overview'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+          概览
+        </button>
+        <button class="nav-item" :class="{active: activeTab==='protect'}" @click="activeTab='protect'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          保护
+        </button>
+        <button class="nav-item" :class="{active: activeTab==='approvals'}" @click="activeTab='approvals'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          审批
+          <span class="nav-badge" x-show="pending.length > 0" x-text="pending.length"></span>
+        </button>
+        <button class="nav-item" :class="{active: activeTab==='activity'}" @click="activeTab='activity'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+          活动
+        </button>
+        <button class="nav-item" :class="{active: activeTab==='settings'}" @click="activeTab='settings'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          设置
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-mode">
+          <span class="mode-dot" :class="mode"></span>
+          <span x-text="modeLabel(mode)"></span>
+        </div>
+        <div class="sidebar-footer-actions">
+          <button @click="toggleTheme()" class="btn btn-ghost btn-icon" title="主题">
+            <svg class="icon" x-show="!isDark()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg class="icon" x-show="isDark()" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <button @click="togglePushSubscribe()" class="btn btn-ghost btn-icon" :title="pushSubscribed ? '已订阅推送' : '订阅 Web Push'">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span x-show="pushSubscribed" style="position:absolute;width:6px;height:6px;background:var(--success);border-radius:50%;bottom:8px;right:8px;"></span>
+          </button>
+          <button x-show="canInstall" @click="installPwa()" class="btn btn-ghost btn-icon" title="安装为桌面 PWA">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main">
+
+      <!-- DESKTOP TOPBAR -->
+      <header class="topbar">
+        <div>
+          <h1 x-text="tabMeta(activeTab).title"></h1>
+          <p class="topbar-subtitle" x-text="tabMeta(activeTab).subtitle"></p>
+        </div>
+        <div class="topbar-right">
+          <span class="sse-pill">
+            <span class="sse-dot" :class="sseState"></span>
+            <span x-text="sseLabel()"></span>
+          </span>
+          <div class="seg" title="运行模式">
+            <button :class="{active: mode==='active'}" @click="setMode('active')">主动</button>
+            <button :class="{active: mode==='passive'}" @click="setMode('passive')">观察</button>
+            <button :class="{active: mode==='off'}" @click="setMode('off')">关闭</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MOBILE TOPBAR -->
+      <header class="mobile-topbar">
+        <div class="logo">
+          <div class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <span x-text="tabMeta(activeTab).title"></span>
+        </div>
+        <span class="sse-pill">
+          <span class="sse-dot" :class="sseState"></span>
+          <span x-text="modeLabel(mode)"></span>
         </span>
-        <button @click="togglePushSubscribe()"
-                class="px-3 py-1 rounded text-white text-xs"
-                :class="pushSubscribed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-600 hover:bg-slate-700'"
-                x-text="pushSubscribed ? '🔔 已订阅推送' : '🔕 订阅锁屏推送'"></button>
-        <button @click="clearAll()" class="px-3 py-1 rounded bg-red-600 hover:bg-red-700">清空日志</button>
-      </div>
-    </header>
+      </header>
 
-    <!-- 统计卡片 -->
-    <section class="grid grid-cols-2 md:grid-cols-5 gap-4 px-6 py-4">
-      <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-xs text-slate-500">总事件</p>
-        <p class="text-2xl font-bold" x-text="stats.total ?? 0"></p>
-      </div>
-      <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-xs text-slate-500">高风险告警</p>
-        <p class="text-2xl font-bold text-red-600" x-text="stats.high_risk_alerts ?? 0"></p>
-      </div>
-      <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-xs text-slate-500">放行</p>
-        <p class="text-2xl font-bold text-green-600" x-text="(stats.by_decision?.allow) ?? 0"></p>
-      </div>
-      <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-xs text-slate-500">拦截</p>
-        <p class="text-2xl font-bold text-red-600" x-text="(stats.by_decision?.deny) ?? 0"></p>
-      </div>
-      <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-xs text-slate-500">脱敏</p>
-        <p class="text-2xl font-bold text-blue-600" x-text="(stats.by_decision?.redact) ?? 0"></p>
-      </div>
-    </section>
+      <div class="content">
 
-    <!-- 审批面板：tab 切换「待审批 | 历史」-->
-    <section class="px-6 mb-3" x-show="pending.length > 0 || approvalsTab === 'history'">
-      <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg shadow-sm p-3">
-        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <div class="flex items-center gap-3">
-            <h2 class="text-sm font-semibold text-amber-800 flex items-center gap-2">
-              <span class="text-base">🔐</span> 审批
-            </h2>
-            <div class="flex bg-white rounded border border-amber-200 overflow-hidden text-xs">
-              <button @click="approvalsTab='pending'"
-                      class="px-3 py-1"
-                      :class="approvalsTab==='pending' ? 'bg-amber-200 text-amber-900' : 'text-amber-700 hover:bg-amber-100'">
-                待审批 <span x-text="`(${pending.length})`"></span>
-              </button>
-              <button @click="loadHistory(); approvalsTab='history'"
-                      class="px-3 py-1 border-l border-amber-200"
-                      :class="approvalsTab==='history' ? 'bg-amber-200 text-amber-900' : 'text-amber-700 hover:bg-amber-100'">
-                历史
-              </button>
+        <!-- ===================================================== -->
+        <!-- TAB: OVERVIEW (首页)                                 -->
+        <!-- ===================================================== -->
+        <section x-show="activeTab==='overview'" x-cloak>
+
+          <!-- ⚠ Hook 未装提示卡（最重要的 UX：默认 dashboard 拦不到 Claude Code 内置工具）-->
+          <div x-show="claudeCodeDetected() && !hooksState.claude_code?.installed" x-cloak
+               style="background:linear-gradient(135deg,#fef3c7 0%,#fed7aa 100%);border:1px solid var(--warning);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div style="font-size:32px;">⚠️</div>
+            <div style="flex:1;min-width:200px;">
+              <div style="font-size:15px;font-weight:600;color:#92400e;margin-bottom:4px;">
+                Claude Code 内置工具未受保护
+              </div>
+              <div style="font-size:13px;color:#78350f;line-height:1.55;">
+                检测到你装了 Claude Code 但<b>没装 Hook</b>。Claude 调 Bash / Write / Edit / WebFetch 这些<b>内置工具</b>不走 MCP，必须装 PreToolUse hook 才能拦。装 Hook 后 ~/.claude/settings.json 自动加一行（备份原文件）。
+              </div>
+            </div>
+            <button @click="installClaudeHook()" class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.71"/></svg>
+              一键装 Hook
+            </button>
+          </div>
+
+          <!-- ✓ Hook 已装提示卡 -->
+          <div x-show="claudeCodeDetected() && hooksState.claude_code?.installed" x-cloak
+               style="background:var(--success-bg);border:1px solid var(--success);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+            <svg style="width:20px;height:20px;color:var(--success);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+            <div style="flex:1;font-size:13px;color:var(--success);">
+              <b>Claude Code Hook 已装</b> · 内置工具调用都会走 Sentinel 审批
             </div>
           </div>
-          <span class="text-xs text-amber-600 font-normal" x-show="approvalsTab==='pending'">
-            Agent 想调用敏感工具，等你拍板
-          </span>
-        </div>
 
-        <!-- 待审批列表 -->
-        <div x-show="approvalsTab==='pending'">
-        <template x-if="pending.length === 0">
-          <p class="text-xs text-slate-500 italic px-1">暂无待审批 · 一切如常 ✨</p>
-        </template>
-        <ul class="space-y-2">
-          <template x-for="p in pending" :key="p.id">
-            <li class="bg-white rounded p-3 text-sm border border-amber-200">
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded" x-text="p.tool_name"></span>
-                  <span class="text-xs text-slate-500" x-text="formatTime(p.created_at)"></span>
-                  <span class="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700"
-                        x-text="`risk ${(p.risk_score ?? 0).toFixed(2)}`"></span>
-                </div>
-                <div class="flex gap-2">
-                  <button @click="decide(p.id, true)"
-                          class="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs">
-                    ✓ 批准
-                  </button>
-                  <button @click="decide(p.id, false)"
-                          class="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs">
-                    ✗ 拒绝
-                  </button>
-                </div>
+          <!-- KPI 4 卡 -->
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="kpi-label">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                客户端覆盖
               </div>
-              <p class="text-xs text-slate-700 mt-1" x-text="p.reason"></p>
-              <details class="mt-1">
-                <summary class="text-xs text-slate-400 cursor-pointer">参数 / 命中规则</summary>
-                <pre class="text-xs bg-slate-50 p-2 mt-1 rounded" x-text="JSON.stringify(p.args, null, 2)"></pre>
+              <div class="kpi-num">
+                <span x-text="(discovery.clients||[]).filter(c=>c.installed).length"></span>
+                <span style="color:var(--text-4);font-weight:400;font-size:.75em;"> / <span x-text="(discovery.clients||[]).length"></span></span>
+              </div>
+              <div class="kpi-sub" x-text="`${(discovery.servers||[]).length} 个 mcpServers · ${protectedCount()} 已保护`"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                总事件
+              </div>
+              <div class="kpi-num" x-text="stats.total ?? 0"></div>
+              <div class="kpi-sub" x-text="`高风险 ${stats.high_risk_alerts ?? 0} · 拦截 ${(stats.by_decision?.deny) ?? 0}`"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                待审批
+              </div>
+              <div class="kpi-num" :style="pending.length>0?'color:var(--warning)':''" x-text="pending.length"></div>
+              <div class="kpi-sub" x-text="pending.length > 0 ? '点「审批」决断' : '一切如常 ✨'"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+                运行模式
+              </div>
+              <div class="kpi-num" :style="`color: ${mode==='active'?'var(--success)':mode==='passive'?'var(--warning)':'var(--text-3)'}`" style="font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;" x-text="mode"></div>
+              <div class="kpi-sub" x-text="modeLabel(mode)"></div>
+            </div>
+          </div>
+
+          <!-- 快速操作 -->
+          <h3 style="font-size:13px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:32px 0 12px;">快速操作</h3>
+          <div class="qa-grid">
+            <button class="qa-card" @click="activeTab='protect'; setTimeout(()=>wrapAllUnprotected(),300)" :disabled="unprotectedCount()===0">
+              <div class="qa-icon-wrap">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <div class="qa-title">一键全部包装</div>
+              <div class="qa-desc"><span x-text="unprotectedCount()"></span> 个未保护 server 立即纳入 Sentinel</div>
+            </button>
+            <button class="qa-card" @click="activeTab='settings'; settingsTab='hook'">
+              <div class="qa-icon-wrap">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.71"/></svg>
+              </div>
+              <div class="qa-title">装 Claude Code Hook</div>
+              <div class="qa-desc">拦内置 Bash / Write / Edit 工具调用</div>
+            </button>
+            <button class="qa-card" @click="activeTab='settings'; settingsTab='lark'">
+              <div class="qa-icon-wrap">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="qa-title">配飞书审批通道</div>
+              <div class="qa-desc" x-text="lark.notifier_active ? '✓ 已启用' : '远程一键批准 / 拒绝'"></div>
+            </button>
+            <button class="qa-card" @click="activeTab='settings'; settingsTab='strength'">
+              <div class="qa-icon-wrap">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2" fill="currentColor"/><circle cx="16" cy="12" r="2" fill="currentColor"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
+              </div>
+              <div class="qa-title">调整拦截强度</div>
+              <div class="qa-desc">当前: <span x-text="strength.presets?.[strength.level]?.label || strength.level"></span></div>
+            </button>
+          </div>
+
+          <!-- 最近活动 -->
+          <h3 style="font-size:13px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:32px 0 12px;">最近活动</h3>
+          <div class="card">
+            <template x-if="events.length === 0">
+              <div style="padding:48px 18px;text-align:center;color:var(--text-3);">
+                <svg style="width:32px;height:32px;margin:0 auto 8px;color:var(--text-4);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p>暂无事件 · 让 Claude 调一个 MCP 工具试试</p>
+              </div>
+            </template>
+            <table class="table" x-show="events.length > 0">
+              <thead>
+                <tr><th>决策</th><th>工具</th><th>时间</th><th style="text-align:right;">风险</th></tr>
+              </thead>
+              <tbody>
+                <template x-for="ev in events.slice(0, 8)" :key="ev.id">
+                  <tr :class="`row-${ev.decision==='ask_user' ? 'ask' : ev.decision}`">
+                    <td>
+                      <span class="pill" :class="{'pill-success':ev.decision==='allow','pill-danger':ev.decision==='deny','pill-warning':ev.decision==='ask_user','pill-info':ev.decision==='redact'}" x-text="ev.decision"></span>
+                    </td>
+                    <td class="mono" style="font-size:12px;font-weight:500;" x-text="ev.tool_name"></td>
+                    <td style="color:var(--text-3);font-size:12px;" x-text="formatTime(ev.timestamp)"></td>
+                    <td style="text-align:right;color:var(--text-2);font-size:12px;" x-text="(ev.risk_score ?? 0).toFixed(2)"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- TAB: PROTECT (保护)                                  -->
+        <!-- ===================================================== -->
+        <section x-show="activeTab==='protect'" x-cloak>
+          <!-- 顶部摘要 + 操作 -->
+          <div class="card" style="margin-bottom:18px;">
+            <div class="card-header">
+              <div>
+                <h3>客户端覆盖</h3>
+                <p x-text="discoverySummary()"></p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button @click="loadDiscovery()" :disabled="discoveryBusy" class="btn btn-secondary btn-sm">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  扫描
+                </button>
+                <button @click="wrapAllUnprotected()" :disabled="unprotectedCount()===0 || discoveryBusy" class="btn btn-primary btn-sm">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                  一键全部包装<span x-show="unprotectedCount() > 0">（<span x-text="unprotectedCount()"></span>）</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 客户端表格 -->
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>客户端</th>
+                  <th>状态</th>
+                  <th>路径</th>
+                  <th>覆盖</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="c in (discovery.clients || [])" :key="c.key">
+                  <tr>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="client-icon" :style="`background: ${clientIconBg(c.key)};`" x-text="clientInitial(c.display_name)"></div>
+                        <div>
+                          <div style="font-weight:500;" x-text="c.display_name"></div>
+                          <div style="font-size:11px;color:var(--text-3);" x-text="c.description"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span x-show="c.installed" class="pill pill-success">已检测</span>
+                      <span x-show="!c.installed" class="pill pill-mute">未安装</span>
+                    </td>
+                    <td>
+                      <code style="font-size:11px;color:var(--text-3);" x-text="(c.config_files||[])[0] || '—'"></code>
+                    </td>
+                    <td>
+                      <span x-show="c.server_count > 0" class="pill" :class="c.protected_count === c.server_count ? 'pill-success' : 'pill-warning'">
+                        <span x-text="c.protected_count"></span>/<span x-text="c.server_count"></span>
+                      </span>
+                      <span x-show="c.server_count === 0 && c.installed" class="pill pill-mute">无 server</span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- mcpServers 表格 -->
+          <div class="card" x-show="(discovery.servers||[]).length > 0" style="margin-bottom:18px;">
+            <div class="card-header">
+              <div>
+                <h3>已发现的 mcpServers</h3>
+                <p>勾选后批量操作</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button @click="wrapSelected()" :disabled="selectedCount()===0 || discoveryBusy" class="btn btn-success btn-sm">
+                  <span>包装选中</span><span x-show="selectedCount()>0">（<span x-text="selectedCount()"></span>）</span>
+                </button>
+                <button @click="unwrapSelected()" :disabled="selectedCount()===0 || discoveryBusy" class="btn btn-secondary btn-sm">
+                  解除选中
+                </button>
+              </div>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:36px;"><input type="checkbox" :checked="allSelected()" @change="toggleSelectAll()"></th>
+                  <th>Server</th>
+                  <th>客户端</th>
+                  <th>命令</th>
+                  <th>状态</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="s in (discovery.servers || [])" :key="serverKey(s)">
+                  <tr>
+                    <td><input type="checkbox" :checked="!!selected[serverKey(s)]" @change="toggleOne(s)"></td>
+                    <td>
+                      <div style="font-weight:500;font-family:'DM Mono',monospace;font-size:12px;" x-text="s.server_name"></div>
+                      <div style="font-size:11px;color:var(--text-4);" x-text="s.scope || ''"></div>
+                    </td>
+                    <td x-text="s.client_display"></td>
+                    <td>
+                      <code style="font-size:11px;color:var(--text-3);" x-text="`${s.upstream_command} ${(s.upstream_args||[]).slice(0,2).join(' ')}`"></code>
+                    </td>
+                    <td>
+                      <span x-show="s.is_protected" class="pill pill-success">
+                        <svg style="width:11px;height:11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        已保护
+                      </span>
+                      <span x-show="!s.is_protected" class="pill pill-warning">未保护</span>
+                    </td>
+                    <td>
+                      <button x-show="!s.is_protected" @click="wrapOne(s)" :disabled="discoveryBusy" class="btn btn-success btn-sm">包装</button>
+                      <button x-show="s.is_protected" @click="unwrapOne(s)" :disabled="discoveryBusy" class="btn btn-secondary btn-sm">解除</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <div x-show="discoveryMessage" style="padding:12px 18px;border-top:1px solid var(--border);font-size:12px;white-space:pre-line;" :style="discoverySuccess?'color:var(--success);background:var(--success-bg)':'color:var(--danger);background:var(--danger-bg)'" x-text="discoveryMessage"></div>
+          </div>
+
+          <!-- Hook 矩阵 -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Hook 接入矩阵</h3>
+                <p>原生 PreToolUse hook + MCP wrap 的覆盖策略</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button x-show="!hooksState.claude_code?.installed" @click="installClaudeHook()" class="btn btn-primary btn-sm">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.71"/></svg>
+                  装 Claude Code Hook
+                </button>
+                <button x-show="hooksState.claude_code?.installed" @click="uninstallClaudeHook()" class="btn btn-secondary btn-sm">移除</button>
+              </div>
+            </div>
+            <table class="table">
+              <thead>
+                <tr><th>客户端</th><th>原生 Hook</th><th>策略</th><th>能拦内置工具</th></tr>
+              </thead>
+              <tbody>
+                <template x-for="c in (hooksState.clients || [])" :key="c.client_key">
+                  <tr>
+                    <td style="font-weight:500;" x-text="c.display_name"></td>
+                    <td>
+                      <span x-show="c.native_hook" class="pill pill-success">支持</span>
+                      <span x-show="!c.native_hook" class="pill pill-mute">无</span>
+                    </td>
+                    <td style="font-size:12px;color:var(--text-2);" x-text="c.approach"></td>
+                    <td>
+                      <span x-show="c.covers_internal_tools && hooksState.claude_code?.installed" class="pill pill-success">已开启</span>
+                      <span x-show="c.covers_internal_tools && !hooksState.claude_code?.installed" class="pill pill-warning">需装 Hook</span>
+                      <span x-show="!c.covers_internal_tools" style="font-size:11px;color:var(--text-3);">仅第三方 MCP server</span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- TAB: APPROVALS (审批)                                -->
+        <!-- ===================================================== -->
+        <section x-show="activeTab==='approvals'" x-cloak>
+          <div class="tabs">
+            <button :class="{active: approvalsTab==='pending'}" @click="approvalsTab='pending'">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              待审批 <span x-show="pending.length>0" x-text="`(${pending.length})`"></span>
+            </button>
+            <button :class="{active: approvalsTab==='history'}" @click="loadHistory(); approvalsTab='history'">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z"/></svg>
+              历史
+            </button>
+          </div>
+
+          <!-- 待审批 -->
+          <div x-show="approvalsTab==='pending'">
+            <template x-if="pending.length === 0">
+              <div class="card" style="padding:60px 18px;text-align:center;color:var(--text-3);">
+                <svg style="width:48px;height:48px;margin:0 auto 12px;color:var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <h3 style="font-size:16px;color:var(--text);margin-bottom:4px;">暂无待审批</h3>
+                <p>一切如常 · AI 没有正在等待的敏感工具调用</p>
+              </div>
+            </template>
+            <template x-for="p in pending" :key="p.id">
+              <div class="approval-card">
+                <div class="approval-card-head">
+                  <span class="tool-name" x-text="p.tool_name"></span>
+                  <span class="pill" :class="(p.risk_score ?? 0) >= 0.7 ? 'pill-danger' : ((p.risk_score ?? 0) >= 0.4 ? 'pill-warning' : 'pill-success')">
+                    风险 <span x-text="(p.risk_score ?? 0).toFixed(2)"></span>
+                  </span>
+                  <span style="font-size:11px;color:var(--text-3);margin-left:auto;" x-text="formatTime(p.created_at)"></span>
+                </div>
+                <p class="reason" x-text="p.reason"></p>
                 <template x-if="(p.triggered || []).length > 0">
-                  <div class="mt-1 flex flex-wrap gap-1">
+                  <div class="approval-rules">
                     <template x-for="r in p.triggered">
-                      <span class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-1 rounded" x-text="r"></span>
+                      <span class="approval-rule" :title="r" x-text="friendlyRule(r)"></span>
                     </template>
                   </div>
                 </template>
-              </details>
-            </li>
-          </template>
-        </ul>
-        </div>
-
-        <!-- 审批历史 -->
-        <div x-show="approvalsTab==='history'">
-          <template x-if="history.length === 0">
-            <p class="text-xs text-slate-500 italic px-1">暂无历史记录</p>
-          </template>
-          <ul class="space-y-1.5">
-            <template x-for="h in history" :key="h.id">
-              <li class="bg-white rounded p-2.5 text-xs border border-slate-200 flex items-center gap-3 flex-wrap">
-                <span class="px-2 py-0.5 rounded font-mono text-[11px]"
-                      :class="{
-                        'bg-emerald-100 text-emerald-800': h.status === 'approved',
-                        'bg-red-100 text-red-700': h.status === 'denied',
-                        'bg-slate-100 text-slate-600': h.status === 'expired',
-                        'bg-amber-100 text-amber-800': h.status === 'pending',
-                      }"
-                      x-text="h.status"></span>
-                <span class="font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded" x-text="h.tool_name"></span>
-                <span class="text-slate-500" x-text="formatTime(h.created_at)"></span>
-                <span class="text-slate-500" x-show="h.decided_at">→</span>
-                <span class="text-slate-500" x-show="h.decided_at" x-text="formatTime(h.decided_at) + ' · ' + (h.decided_by || '')"></span>
-                <span class="text-slate-400 ml-auto" x-text="h.reason"></span>
-              </li>
-            </template>
-          </ul>
-          <button @click="loadHistory()"
-                  class="mt-2 text-xs text-amber-700 hover:underline">⟳ 刷新历史</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 过滤栏 -->
-    <section class="px-6 mb-3 flex flex-wrap gap-2 items-center text-sm">
-      <label>决策：
-        <select x-model="filters.decision" @change="reload()" class="border rounded px-2 py-1">
-          <option value="">全部</option>
-          <option value="allow">allow</option>
-          <option value="deny">deny</option>
-          <option value="ask_user">ask_user</option>
-          <option value="redact">redact</option>
-        </select>
-      </label>
-      <label>最低风险分：
-        <input type="number" step="0.1" min="0" max="1" x-model.number="filters.min_risk" @change="reload()" class="border rounded px-2 py-1 w-20" />
-      </label>
-      <label>工具：
-        <input type="text" x-model="filters.tool_name" @keyup.enter="reload()" placeholder="read_file..." class="border rounded px-2 py-1" />
-      </label>
-      <button @click="reload()" class="px-3 py-1 bg-slate-800 text-white rounded">刷新</button>
-    </section>
-
-    <!-- Top 工具 -->
-    <section class="px-6 mb-3" x-show="(stats.by_tool || []).length > 0">
-      <p class="text-xs text-slate-500 mb-1">Top 调用工具</p>
-      <div class="flex flex-wrap gap-2">
-        <template x-for="t in (stats.by_tool || [])" :key="t.tool_name">
-          <span class="bg-white border border-slate-200 rounded px-2 py-1 text-xs">
-            <b x-text="t.tool_name"></b>
-            <span class="text-slate-500" x-text="`× ${t.count}`"></span>
-          </span>
-        </template>
-      </div>
-    </section>
-
-    <!-- 时间线 -->
-    <section class="px-6 pb-10">
-      <h2 class="text-sm font-semibold mb-2 text-slate-600">事件时间线</h2>
-      <template x-if="events.length === 0">
-        <p class="text-slate-400 italic">暂无事件。运行 examples/protected_agent.py 触发一些调用试试。</p>
-      </template>
-      <ul class="space-y-2">
-        <template x-for="ev in events" :key="ev.id">
-          <li class="bg-white rounded-lg shadow-sm p-3 text-sm"
-              :class="[`row-${ev.decision === 'ask_user' ? 'ask' : ev.decision}`, ev._fresh ? 'flash' : '']">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span :class="`pill pill-${ev.decision === 'ask_user' ? 'ask' : ev.decision}`" x-text="ev.decision"></span>
-                <span class="font-mono text-xs text-slate-500" x-text="ev.event_type"></span>
-                <span class="font-semibold" x-text="ev.tool_name"></span>
-                <span class="text-xs text-slate-400" x-text="formatTime(ev.timestamp)"></span>
+                <details style="margin-bottom:12px;">
+                  <summary style="font-size:11px;color:var(--text-3);cursor:pointer;">查看调用参数</summary>
+                  <pre style="font-size:11px;background:var(--surface-2);padding:8px;margin-top:6px;border-radius:4px;color:var(--text-2);overflow-x:auto;" x-text="JSON.stringify(p.args, null, 2)"></pre>
+                </details>
+                <div class="approval-actions">
+                  <button @click="decide(p.id, true)" class="btn btn-success btn-sm">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    批准
+                  </button>
+                  <button @click="decide(p.id, false)" class="btn btn-danger btn-sm">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    拒绝
+                  </button>
+                  <span style="width:1px;background:var(--border);margin:0 4px;"></span>
+                  <button @click="addAutoDecision(p.tool_name, 'allow', p.id)" class="btn btn-ghost btn-sm" :title="`后续所有 ${p.tool_name} 自动批准`" style="color:var(--success);">
+                    总是批准
+                  </button>
+                  <button @click="addAutoDecision(p.tool_name, 'deny', p.id)" class="btn btn-ghost btn-sm" :title="`后续所有 ${p.tool_name} 自动拒绝`" style="color:var(--danger);">
+                    总是拒绝
+                  </button>
+                </div>
               </div>
-              <span class="text-xs px-2 py-0.5 rounded"
-                    :class="ev.risk_score >= 0.7 ? 'bg-red-100 text-red-700' : (ev.risk_score >= 0.3 ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-600')"
-                    x-text="`risk ${(ev.risk_score ?? 0).toFixed(2)}`"></span>
+            </template>
+          </div>
+
+          <!-- 历史 -->
+          <div x-show="approvalsTab==='history'">
+            <div class="card">
+              <table class="table">
+                <thead>
+                  <tr><th>状态</th><th>工具</th><th>时间</th><th>决策者</th></tr>
+                </thead>
+                <tbody>
+                  <template x-for="h in history" :key="h.id">
+                    <tr>
+                      <td>
+                        <span class="pill" :class="{'pill-success':h.status==='approved','pill-danger':h.status==='denied','pill-mute':h.status==='expired'}" x-text="h.status"></span>
+                      </td>
+                      <td class="mono" style="font-size:12px;" x-text="h.tool_name"></td>
+                      <td style="font-size:12px;color:var(--text-3);" x-text="formatTime(h.created_at)"></td>
+                      <td style="font-size:12px;color:var(--text-3);" x-text="h.decided_by || '—'"></td>
+                    </tr>
+                  </template>
+                  <tr x-show="history.length === 0">
+                    <td colspan="4" style="text-align:center;color:var(--text-3);padding:40px;">暂无历史</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <p class="text-xs text-slate-600 mt-1" x-text="ev.reason"></p>
-            <details class="mt-1">
-              <summary class="text-xs text-slate-400 cursor-pointer">参数 / 命中规则</summary>
-              <pre class="text-xs bg-slate-50 p-2 mt-1 rounded" x-text="JSON.stringify(ev.args, null, 2)"></pre>
-              <template x-if="(ev.triggered_rules || []).length > 0">
-                <div class="mt-1 flex flex-wrap gap-1">
-                  <template x-for="r in ev.triggered_rules">
-                    <span class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-1 rounded" x-text="r"></span>
+          </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- TAB: ACTIVITY (活动)                                 -->
+        <!-- ===================================================== -->
+        <section x-show="activeTab==='activity'" x-cloak>
+          <div class="card" style="margin-bottom:14px;">
+            <div class="card-body tight">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <select x-model="filters.decision" @change="reload()" class="select" style="width:auto;">
+                  <option value="">全部决策</option>
+                  <option value="allow">allow</option>
+                  <option value="deny">deny</option>
+                  <option value="ask_user">ask</option>
+                  <option value="redact">redact</option>
+                </select>
+                <input type="number" step="0.1" min="0" max="1" x-model.number="filters.min_risk" @change="reload()" class="input" placeholder="最低风险 (0~1)" style="width:140px;">
+                <input type="text" x-model="filters.tool_name" @keyup.enter="reload()" class="input" placeholder="工具名包含..." style="width:200px;">
+                <button @click="reload()" class="btn btn-secondary btn-sm">刷新</button>
+                <button @click="clearAll()" class="btn btn-ghost btn-sm" style="color:var(--danger);margin-left:auto;">清空日志</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <table class="table">
+              <thead>
+                <tr><th>决策</th><th>工具</th><th>原因 / 命中规则</th><th>风险</th><th>时间</th></tr>
+              </thead>
+              <tbody>
+                <template x-if="events.length === 0">
+                  <tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:40px;">暂无事件</td></tr>
+                </template>
+                <template x-for="ev in events" :key="ev.id">
+                  <tr :class="[`row-${ev.decision==='ask_user'?'ask':ev.decision}`, ev._fresh ? 'flash' : '']">
+                    <td>
+                      <span class="pill" :class="{'pill-success':ev.decision==='allow','pill-danger':ev.decision==='deny','pill-warning':ev.decision==='ask_user','pill-info':ev.decision==='redact'}" x-text="ev.decision"></span>
+                    </td>
+                    <td class="mono" style="font-size:12px;font-weight:500;" x-text="ev.tool_name"></td>
+                    <td>
+                      <div style="font-size:12px;color:var(--text-2);margin-bottom:4px;" x-text="ev.reason"></div>
+                      <div style="display:flex;flex-wrap:wrap;gap:4px;" x-show="(ev.triggered_rules||[]).length > 0">
+                        <template x-for="r in (ev.triggered_rules||[]).slice(0,3)">
+                          <span class="approval-rule" :title="r" x-text="friendlyRule(r)"></span>
+                        </template>
+                      </div>
+                    </td>
+                    <td style="font-size:12px;color:var(--text-2);" x-text="(ev.risk_score ?? 0).toFixed(2)"></td>
+                    <td style="font-size:12px;color:var(--text-3);" x-text="formatTime(ev.timestamp)"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- TAB: SETTINGS (设置) — 子 tabs                       -->
+        <!-- ===================================================== -->
+        <section x-show="activeTab==='settings'" x-cloak>
+          <div class="tabs" style="overflow-x:auto;">
+            <button :class="{active: settingsTab==='lark'}" @click="settingsTab='lark'">📨 飞书</button>
+            <button :class="{active: settingsTab==='strength'}" @click="settingsTab='strength'">⚖ 拦截强度</button>
+            <button :class="{active: settingsTab==='hook'}" @click="settingsTab='hook'">🔗 Hook</button>
+            <button :class="{active: settingsTab==='auto'}" @click="settingsTab='auto'">⚡ 自动决策</button>
+            <button :class="{active: settingsTab==='presets'}" @click="settingsTab='presets'; if(!integrationsLoaded) loadIntegrations()">🔌 MCP 预设</button>
+          </div>
+
+          <!-- 强度 -->
+          <div x-show="settingsTab==='strength'" x-cloak>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>拦截强度</h3>
+                  <p>从 Strict 到 Permissive 6 档预设，或 Custom 自己调</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="strength-btns">
+                  <template x-for="(p, k) in (strength.presets || {})" :key="k">
+                    <button class="strength-btn" :class="{active: strength.level===k}" @click="setStrengthLevel(k)">
+                      <div class="strength-emoji" x-text="(p.label||'').match(/[\u{1F000}-\u{1FFFF}🛡⚖🌿🔓🔒⚙]/u)?.[0] || ''"></div>
+                      <div class="strength-name" x-text="(p.label||'').replace(/[\u{1F000}-\u{1FFFF}🛡⚖🌿🔓🔒⚙\s]+/gu, '').trim() || k"></div>
+                    </button>
                   </template>
                 </div>
-              </template>
-            </details>
-          </li>
+                <p style="font-size:12px;color:var(--text-2);line-height:1.6;" x-text="strength.presets?.[strength.level]?.tagline || ''"></p>
+
+                <!-- 高级 -->
+                <details style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
+                  <summary style="font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;">高级 — 单条阈值 + 工具白/黑名单</summary>
+                  <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px;">
+                    <div>
+                      <label>提示词注入风险阈值（越低越严格）— 当前: <span x-text="strength.effective?.thresholds?.prompt_injection ?? 0.5"></span></label>
+                      <input type="range" min="0.1" max="1.0" step="0.05" :value="strength.effective?.thresholds?.prompt_injection ?? 0.5" @change="setCustomOverride('detectors.prompt_injection.threshold', parseFloat($event.target.value))" style="width:100%;">
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                      <input type="checkbox" :checked="strength.effective?.thresholds?.dlp_enabled !== false" @change="setCustomOverride('detectors.dlp.enabled', $event.target.checked)">
+                      启用 DLP（输出脱敏 + 输入敏感数据检测）
+                    </label>
+                    <div>
+                      <label>工具白名单（无视风险一律放行；逗号分隔）</label>
+                      <input x-model="strengthListInput.allowlist" @blur="saveStrengthLists()" class="input mono" placeholder="read_file, list_dir, git_status">
+                    </div>
+                    <div>
+                      <label>工具黑名单（一律拒绝；逗号分隔）</label>
+                      <input x-model="strengthListInput.denylist" @blur="saveStrengthLists()" class="input mono" placeholder="shell_exec, http_request_external">
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+
+          <!-- 飞书 -->
+          <div x-show="settingsTab==='lark'" x-cloak>
+
+            <!-- 1. 公网暴露 cloudflared -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-header">
+                <div>
+                  <h3>🌐 公网暴露（飞书 callback 必需）</h3>
+                  <p>用 cloudflared 一键起 https tunnel，让飞书能 callback 到本机</p>
+                </div>
+                <span class="pill" :class="cf.running ? 'pill-success' : (cf.binary_installed ? 'pill-mute' : 'pill-warning')" x-text="cf.running ? '已开启' : (cf.binary_installed ? '未启动' : 'cloudflared 未装')"></span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <template x-if="!cf.binary_installed">
+                  <p style="font-size:12px;color:var(--text-3);">
+                    请先装 cloudflared：<code>brew install cloudflared</code>（macOS）/
+                    <a href="https://pkg.cloudflare.com" target="_blank">apt repo</a>（Linux）
+                  </p>
+                </template>
+                <template x-if="cf.running && cf.url">
+                  <div style="background:var(--success-bg);border:1px solid var(--success);border-radius:6px;padding:10px 12px;">
+                    <div style="font-size:11px;color:var(--success);font-weight:600;margin-bottom:4px;">✓ TUNNEL 已建立</div>
+                    <code style="font-size:13px;font-weight:500;color:var(--text);" x-text="cf.url"></code>
+                    <button @click="copyCallback()" class="btn btn-ghost btn-sm" style="margin-left:6px;">📋 复制 callback URL</button>
+                  </div>
+                </template>
+                <div style="display:flex;gap:8px;">
+                  <button x-show="!cf.running" @click="startCloudflared()" :disabled="!cf.binary_installed || cfBusy" class="btn btn-primary btn-sm">
+                    🚀 启动 tunnel
+                  </button>
+                  <button x-show="cf.running" @click="stopCloudflared()" :disabled="cfBusy" class="btn btn-secondary btn-sm">
+                    停止
+                  </button>
+                  <button @click="loadCloudflared()" class="btn btn-ghost btn-sm">刷新</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. App 凭证 + chat 下拉 -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-header">
+                <div>
+                  <h3>📨 飞书审批通道</h3>
+                  <p>把 ASK_USER 推到飞书消息卡片，远程一键决断</p>
+                </div>
+                <span class="pill" :class="lark.notifier_active ? 'pill-success' : (lark.sdk_available ? 'pill-warning' : 'pill-mute')" x-text="lark.notifier_active ? '已启用' : (lark.sdk_available ? '待配置' : 'lark-oapi 未装')"></span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+                <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
+                  注册自建应用：<a href="https://open.feishu.cn/" target="_blank">open.feishu.cn</a> → 开发者后台 → 创建应用 →
+                  <a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/blob/main/docs/08_LARK_INTEGRATION.md" target="_blank">完整 SOP</a>
+                </p>
+                <div>
+                  <label>App ID</label>
+                  <input x-model="larkForm.app_id" class="input mono" placeholder="cli_xxxxxxxxxxxx">
+                </div>
+                <div>
+                  <label>App Secret</label>
+                  <input x-model="larkForm.app_secret" type="password" class="input mono" placeholder="(每次保存请重填，后端不缓存原值)">
+                </div>
+
+                <!-- chat_id：先尝试下拉，找不到时降级到手输 -->
+                <div>
+                  <label style="display:flex;align-items:center;gap:8px;">
+                    目标 chat / 私信
+                    <button @click="loadLarkChats()" :disabled="larkChatsBusy || !lark.app_id" class="btn btn-ghost btn-sm" style="padding:0 8px;height:22px;">
+                      <svg style="width:11px;height:11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                      自动列出
+                    </button>
+                  </label>
+                  <select x-show="larkChats.length > 0" x-model="larkForm.target_chat_id" class="select">
+                    <option value="">— 选择 —</option>
+                    <template x-for="c in larkChats" :key="c.chat_id">
+                      <option :value="c.chat_id" x-text="`${c.name || '(无名)'} · ${c.chat_id}`"></option>
+                    </template>
+                  </select>
+                  <input x-show="larkChats.length === 0" x-model="larkForm.target_chat_id" class="input mono" placeholder="oc_xxx (群) 或 ou_xxx (私信)">
+                  <p x-show="larkChatsError" style="font-size:11px;color:var(--warning);margin-top:4px;" x-text="larkChatsError"></p>
+                </div>
+
+                <div>
+                  <label>Encrypt Key <span style="font-weight:400;color:var(--text-4);">(可选 — 加密事件订阅)</span></label>
+                  <input x-model="larkForm.encrypt_key" class="input mono">
+                </div>
+
+                <div style="font-size:11px;color:var(--text-3);background:var(--surface-2);padding:8px 10px;border-radius:6px;">
+                  📋 飞书后台「事件与回调」请求 URL: <code x-text="larkCallbackUrl()"></code>
+                  <button @click="copyCallback()" class="btn btn-ghost btn-sm" style="padding:0 6px;height:20px;font-size:10px;margin-left:6px;">复制</button>
+                </div>
+
+                <template x-if="larkMessage">
+                  <div :style="larkSuccess?'color:var(--success);background:var(--success-bg)':'color:var(--danger);background:var(--danger-bg)'" style="padding:10px 12px;border-radius:6px;font-size:12px;white-space:pre-line;" x-text="larkMessage"></div>
+                </template>
+
+                <div style="display:flex;gap:8px;">
+                  <button @click="saveLarkConfig()" :disabled="larkBusy" class="btn btn-primary btn-sm">保存</button>
+                  <button @click="testLarkConnection()" :disabled="larkBusy || !lark.config_exists" class="btn btn-success btn-sm">📤 发测试消息</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 每日摘要 bot -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>📅 每日 ASK_USER 摘要 bot</h3>
+                  <p>每天定时推一张卡片到飞书群，告诉你今天 AI 触发了几次审批</p>
+                </div>
+                <span class="pill" :class="digest.running ? 'pill-success' : 'pill-mute'" x-text="digest.running ? `每天 ${String(digest.target_hour).padStart(2,'0')}:${String(digest.target_minute).padStart(2,'0')} 推送` : '未启动'"></span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:8px;align-items:end;">
+                  <div style="flex:1;">
+                    <label>推送时间</label>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                      <input type="number" min="0" max="23" x-model.number="digestForm.hour" class="input" style="width:70px;">
+                      <span>:</span>
+                      <input type="number" min="0" max="59" x-model.number="digestForm.minute" class="input" style="width:70px;">
+                      <button @click="saveDigestSchedule()" class="btn btn-secondary btn-sm">保存</button>
+                    </div>
+                  </div>
+                  <button @click="pushDigestNow()" :disabled="digestBusy" class="btn btn-primary btn-sm">
+                    📤 立刻发一条
+                  </button>
+                </div>
+                <p style="font-size:11px;color:var(--text-3);">上次推送：<span x-text="digest.last_pushed_date || '(从未)'"></span></p>
+                <template x-if="digestMessage">
+                  <div :style="digestSuccess?'color:var(--success);background:var(--success-bg)':'color:var(--danger);background:var(--danger-bg)'" style="padding:10px 12px;border-radius:6px;font-size:12px;" x-text="digestMessage"></div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Webhook -->
+          <div x-show="settingsTab==='webhooks'" x-cloak>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>推送通道</h3>
+                  <p>Slack / Discord / 自定义 webhook — 与飞书并列做审批通知</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <table class="table" x-show="webhookList.length > 0" style="margin-bottom:16px;">
+                  <thead><tr><th>名字</th><th>类型</th><th>URL</th><th></th></tr></thead>
+                  <tbody>
+                    <template x-for="ep in webhookList" :key="ep.name">
+                      <tr>
+                        <td style="font-weight:500;" x-text="ep.name"></td>
+                        <td><span class="pill" :class="ep.kind==='slack'?'pill-info':ep.kind==='discord'?'pill-accent':'pill-mute'" x-text="ep.kind"></span></td>
+                        <td><code style="font-size:11px;color:var(--text-3);" x-text="ep.url.length>50?ep.url.slice(0,50)+'...':ep.url"></code></td>
+                        <td><button @click="deleteWebhook(ep.name)" class="btn btn-ghost btn-sm" style="color:var(--danger);">删除</button></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+                <div style="display:grid;grid-template-columns:1fr 140px 2fr;gap:8px;align-items:end;">
+                  <div><label>名字</label><input x-model="webhookForm.name" class="input" placeholder="slack-team"></div>
+                  <div><label>类型</label>
+                    <select x-model="webhookForm.kind" class="select">
+                      <option value="slack">Slack</option><option value="discord">Discord</option><option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  <div><label>URL</label><input x-model="webhookForm.url" class="input mono" placeholder="https://hooks.slack.com/services/..."></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+                  <button @click="addWebhook()" :disabled="webhookBusy" class="btn btn-primary btn-sm">+ 添加</button>
+                  <button @click="testWebhooks()" :disabled="webhookBusy || webhookList.length === 0" class="btn btn-success btn-sm">📤 发测试</button>
+                  <span style="font-size:12px;" :style="webhookMessage.startsWith('✓')?'color:var(--success)':'color:var(--danger)'" x-text="webhookMessage"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hook -->
+          <div x-show="settingsTab==='hook'" x-cloak>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Claude Code PreToolUse Hook</h3>
+                  <p>装上后 Claude Code 调内置 Bash / Write / Edit 也走 Sentinel</p>
+                </div>
+                <span class="pill" :class="hooksState.claude_code?.installed ? 'pill-success' : 'pill-mute'" x-text="hooksState.claude_code?.installed ? '已装' : '未装'"></span>
+              </div>
+              <div class="card-body">
+                <p style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
+                  会向 <code x-text="hooksState.claude_code?.settings_path"></code> 追加一条 hook 配置（自动备份）。
+                  其它 client 通过 MCP wrap 拦第三方 server，覆盖矩阵见 <a @click="activeTab='protect'" style="cursor:pointer;">保护页</a>。
+                </p>
+                <div style="display:flex;gap:8px;">
+                  <button x-show="!hooksState.claude_code?.installed" @click="installClaudeHook()" class="btn btn-primary btn-sm">🔗 装 Hook</button>
+                  <button x-show="hooksState.claude_code?.installed" @click="uninstallClaudeHook()" class="btn btn-secondary btn-sm">移除</button>
+                  <button @click="loadHooksState()" class="btn btn-ghost btn-sm">刷新</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 自动决策 -->
+          <div x-show="settingsTab==='auto'" x-cloak>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>自动决策规则</h3>
+                  <p>「总是批准 / 总是拒绝 这个工具」— 在审批卡片上点对应按钮就会加这里</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <template x-if="autoRules.length === 0">
+                  <p style="color:var(--text-3);font-size:13px;padding:20px 0;text-align:center;">暂无自动规则 — 在审批卡片点「总是批准/拒绝」按钮添加</p>
+                </template>
+                <table class="table" x-show="autoRules.length > 0">
+                  <thead><tr><th>决策</th><th>工具</th><th>设置时间</th><th></th></tr></thead>
+                  <tbody>
+                    <template x-for="r in autoRules" :key="r.tool_name">
+                      <tr>
+                        <td><span class="pill" :class="r.decision==='allow'?'pill-success':'pill-danger'" x-text="r.decision==='allow'?'✓ 总是批准':'✗ 总是拒绝'"></span></td>
+                        <td class="mono" style="font-size:12px;font-weight:500;" x-text="r.tool_name"></td>
+                        <td style="font-size:12px;color:var(--text-3);" x-text="formatTime(r.created_at)"></td>
+                        <td><button @click="deleteAutoRule(r.tool_name)" class="btn btn-ghost btn-sm" style="color:var(--danger);">删除</button></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- MCP 预设 -->
+          <div x-show="settingsTab==='presets'" x-cloak>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>从预设新装 MCP server</h3>
+                  <p>filesystem / github / lark-mcp 等常见 server，一键写到 client config</p>
+                </div>
+              </div>
+              <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <template x-for="c in (integrations.clients || [])" :key="c.key">
+                  <div style="border:1px solid var(--border);border-radius:8px;padding:14px;" :style="!c.installed?'opacity:.55':''">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                      <h4 style="font-size:13px;font-weight:600;" x-text="c.display_name"></h4>
+                      <span class="pill" :class="c.installed ? 'pill-success' : 'pill-mute'" x-text="c.installed ? '已检测' : '未装'"></span>
+                    </div>
+                    <p style="font-size:11px;color:var(--text-3);margin-bottom:10px;" x-text="c.description"></p>
+                    <button @click="openInstallModal(c)" :disabled="!c.supported_on_platform || c.parse_error" class="btn btn-secondary btn-sm" style="width:100%;">+ 添加 wrapped server</button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- ============ MOBILE BOTTOM TAB BAR ============ -->
+    <nav class="mobile-tabbar">
+      <div class="mobile-tabbar-grid">
+        <button :class="{active: activeTab==='overview'}" @click="activeTab='overview'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+          概览
+        </button>
+        <button :class="{active: activeTab==='approvals'}" @click="activeTab='approvals'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          审批
+          <span class="nav-badge" x-show="pending.length > 0" x-text="pending.length"></span>
+        </button>
+        <button :class="{active: activeTab==='protect'}" @click="activeTab='protect'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          保护
+        </button>
+        <button :class="{active: activeTab==='activity'}" @click="activeTab='activity'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+          活动
+        </button>
+        <button :class="{active: activeTab==='settings'}" @click="activeTab='settings'">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          设置
+        </button>
+      </div>
+    </nav>
+
+    <!-- ============ FS-watch toast ============ -->
+    <div x-show="watchToast.show" x-cloak class="watch-toast">
+      <svg style="width:20px;height:20px;color:var(--warning);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+      <div class="toast-msg" x-text="watchToast.msg"></div>
+      <button x-show="watchToast.unprotected.length > 0" @click="wrapWatchToastServers()" class="btn btn-success btn-sm">一键包装</button>
+      <button @click="watchToast.show = false" class="btn btn-ghost btn-icon btn-sm">✕</button>
+    </div>
+
+    <!-- ============ ONBOARDING MODAL ============ -->
+    <div x-show="onboarding.open" x-cloak class="modal-backdrop">
+      <div class="modal">
+        <!-- step 1 -->
+        <template x-if="onboarding.step === 1">
+          <div>
+            <div class="modal-hero">
+              <div class="modal-icon">🛡</div>
+              <h2>欢迎使用 Sentinel-MCP</h2>
+              <p>给你的 AI 工具调用加一道安全门：拦截危险操作 · 远程审批 · 全程审计</p>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;gap:12px;align-items:start;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">1</div>
+                <div><b>自动扫描</b>本机所有 MCP 客户端（Claude Code / Cursor / Cline 等 13+）</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:start;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">2</div>
+                <div><b>一键包装</b>所有 mcpServers，使其经 Sentinel 代理转发</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:start;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">3</div>
+                <div><b>选模式</b>：主动拦截 / 只观察 / 关闭，可随时切换</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button @click="dismissOnboarding()" class="btn btn-ghost btn-sm">跳过</button>
+              <button @click="onboardingScan()" class="btn btn-primary btn-sm">开始扫描 →</button>
+            </div>
+          </div>
         </template>
-      </ul>
-    </section>
+        <!-- step 2 -->
+        <template x-if="onboarding.step === 2">
+          <div>
+            <div class="modal-hero">
+              <div class="modal-icon">🔍</div>
+              <h2>扫描结果</h2>
+              <p x-text="onboarding.scanSummary"></p>
+            </div>
+            <div class="modal-body" style="max-height:300px;overflow-y:auto;">
+              <template x-for="c in onboardingInstalledClients()" :key="c.key">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+                  <div class="client-icon" :style="`background: ${clientIconBg(c.key)};`" x-text="clientInitial(c.display_name)"></div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:500;" x-text="c.display_name"></div>
+                    <div style="font-size:11px;color:var(--text-3);"><span x-text="c.server_count"></span> mcpServers · <span style="color:var(--success);" x-text="c.protected_count"></span> 已保护</div>
+                  </div>
+                  <span class="pill" :class="c.protected_count===c.server_count && c.server_count>0 ? 'pill-success' : c.server_count>0 ? 'pill-warning' : 'pill-mute'" x-text="c.server_count===0?'无 server':(c.protected_count===c.server_count?'已保护':`${c.server_count - c.protected_count} 未保护`)"></span>
+                </div>
+              </template>
+              <p x-show="onboardingInstalledClients().length === 0" style="text-align:center;color:var(--text-3);padding:24px 0;font-size:13px;">本机暂未检测到 MCP 客户端 — 装一个常用的（Claude Code / Cursor）后回来再扫</p>
+
+              <!-- 检测到 Claude Code 但 Hook 未装 → 强力推荐 -->
+              <div x-show="claudeCodeDetected() && !hooksState.claude_code?.installed" style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:8px;padding:12px 14px;margin-top:12px;">
+                <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:4px;">⚠️ Claude Code 内置工具默认拦不到</div>
+                <p style="font-size:12px;color:#78350f;line-height:1.6;margin-bottom:8px;">Claude Code 的 Bash / Write / Edit 是内置工具，不走 MCP。要拦截它们必须装 PreToolUse hook（自动备份 ~/.claude/settings.json）</p>
+                <button @click="installClaudeHook()" class="btn btn-primary btn-sm">🔗 装 Hook</button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button @click="onboarding.step=1" class="btn btn-ghost btn-sm">← 上一步</button>
+              <button @click="onboarding.step=3" class="btn btn-primary btn-sm">下一步 →</button>
+            </div>
+          </div>
+        </template>
+        <!-- step 3 -->
+        <template x-if="onboarding.step === 3">
+          <div>
+            <div class="modal-hero">
+              <div class="modal-icon">⚙</div>
+              <h2>选择运行模式</h2>
+              <p>随时可在侧边栏 / 顶部切换</p>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+              <label style="border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;" :class="onboarding.chosenMode==='active'?'':''" :style="onboarding.chosenMode==='active'?'border-color:var(--accent);background:var(--accent-bg);':''">
+                <div style="display:flex;gap:10px;align-items:start;">
+                  <input type="radio" name="onb-mode" value="active" x-model="onboarding.chosenMode">
+                  <div>
+                    <div style="font-weight:600;display:flex;gap:8px;align-items:center;">🛡 主动保护 <span class="pill pill-accent">推荐</span></div>
+                    <div style="font-size:12px;color:var(--text-3);margin-top:4px;">按规则拦截危险调用，敏感操作弹审批卡片到飞书 / Web Push</div>
+                  </div>
+                </div>
+              </label>
+              <label style="border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;" :style="onboarding.chosenMode==='passive'?'border-color:var(--warning);background:var(--warning-bg);':''">
+                <div style="display:flex;gap:10px;align-items:start;">
+                  <input type="radio" name="onb-mode" value="passive" x-model="onboarding.chosenMode">
+                  <div>
+                    <div style="font-weight:600;">👁 只看不拦</div>
+                    <div style="font-size:12px;color:var(--text-3);margin-top:4px;">所有调用一律放行但记录 — 适合「先观察一周再开拦截」</div>
+                  </div>
+                </div>
+              </label>
+              <label style="border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;" :style="onboarding.chosenMode==='off'?'border-color:var(--text-3);background:var(--surface-2);':''">
+                <div style="display:flex;gap:10px;align-items:start;">
+                  <input type="radio" name="onb-mode" value="off" x-model="onboarding.chosenMode">
+                  <div>
+                    <div style="font-weight:600;">⏸ 关闭</div>
+                    <div style="font-size:12px;color:var(--text-3);margin-top:4px;">完全透传，不记录 — 排查问题用</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div class="modal-footer">
+              <button @click="onboarding.step=2" class="btn btn-ghost btn-sm">← 上一步</button>
+              <button @click="completeOnboarding()" class="btn btn-primary btn-sm">完成 ✓</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ============ INSTALL MODAL (preset MCP server) ============ -->
+    <div x-show="installModal.open" x-cloak class="modal-backdrop">
+      <div class="modal" style="max-width:520px;">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-size:15px;font-weight:600;">添加 wrapped server 到 <span x-text="installModal.client?.display_name"></span></h3>
+          <button @click="installModal.open=false" class="btn btn-ghost btn-icon btn-sm">✕</button>
+        </div>
+        <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label>选择 MCP server 预设</label>
+            <select x-model="installModal.presetKey" @change="presetChanged()" class="select">
+              <template x-for="(p, k) in presets" :key="k"><option :value="k" x-text="`${p.label} — ${p.description}`"></option></template>
+            </select>
+          </div>
+          <div>
+            <label>在 client config 里的名字</label>
+            <input x-model="installModal.serverName" class="input mono" placeholder="filesystem-guarded">
+          </div>
+          <template x-for="i in (presets[installModal.presetKey]?.needs_input || [])" :key="i.key">
+            <div>
+              <label x-text="i.label"></label>
+              <input x-model="installModal.inputs[i.key]" class="input mono" :placeholder="i.default">
+            </div>
+          </template>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);">
+            <input type="checkbox" x-model="installModal.overwrite">同名已存在时覆盖
+          </label>
+          <template x-if="installModal.message">
+            <div :style="installModal.success?'color:var(--success);background:var(--success-bg)':'color:var(--danger);background:var(--danger-bg)'" style="padding:10px 12px;border-radius:6px;font-size:12px;white-space:pre-line;" x-text="installModal.message"></div>
+          </template>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);">
+          <button @click="installModal.open=false" class="btn btn-ghost btn-sm">取消</button>
+          <button @click="doPreview()" class="btn btn-secondary btn-sm">预览</button>
+          <button @click="doInstall()" :disabled="installModal.busy" class="btn btn-primary btn-sm">写入 config</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -279,35 +1656,272 @@
 
     function dashboard() {
       return {
+        // ====== Tab 状态（v0.3 新加） ======
+        activeTab: 'overview',     // overview | protect | approvals | activity | settings
+        settingsTab: 'lark',       // 飞书优先（这是飞书 校园挑战赛）— lark | strength | hook | auto | presets
+
+        tabMeta(tab) {
+          return {
+            overview:  { title: '概览',     subtitle: 'AI 工具调用全景 + 关键指标 + 快速操作' },
+            protect:   { title: '保护',     subtitle: '客户端覆盖 · 一键截关 · Hook 接入矩阵' },
+            approvals: { title: '审批中心', subtitle: 'AI 想调用敏感工具时等你拍板' },
+            activity:  { title: '活动日志', subtitle: '实时 tool_call 决策事件流' },
+            settings:  { title: '设置',     subtitle: '飞书 · 拦截强度 · Hook · 自动决策 · MCP 预设' },
+          }[tab] || { title: tab, subtitle: '' };
+        },
+        modeLabel(m) {
+          return { active: '主动保护', passive: '只观察不拦', off: '关闭' }[m] || m;
+        },
+        claudeCodeDetected() {
+          const cc = (this.discovery.clients || []).find(c => c.key === 'claude_code');
+          return !!(cc && cc.installed);
+        },
+        isDark() {
+          return document.documentElement.classList.contains('dark');
+        },
+        toggleTheme() {
+          const root = document.documentElement;
+          if (root.classList.contains('dark')) {
+            root.classList.remove('dark'); root.classList.add('light');
+            localStorage.setItem('theme', 'light');
+          } else {
+            root.classList.remove('light'); root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+          }
+        },
+
+        // ====== 既有 state（保留） ======
         events: [],
-        pending: [],               // 待审批队列
-        history: [],               // 审批历史（approved/denied/expired）
-        approvalsTab: 'pending',   // 'pending' | 'history'
+        pending: [],
+        history: [],
+        approvalsTab: 'pending',
         stats: {},
         filters: { decision: '', min_risk: 0.0, tool_name: '' },
         canInstall: false,
-        sseState: 'connecting',   // 'connecting' | 'open' | 'closed'
-        _es: null,                 // EventSource 实例
-        pushSubscribed: false,     // Web Push 订阅状态
+        sseState: 'connecting',
+        _es: null,
+        pushSubscribed: false,
+
+        // 模式
+        mode: 'active',
+        async loadMode() {
+          try {
+            const r = await fetch('/api/mode');
+            const j = await r.json();
+            if (j.mode) this.mode = j.mode;
+          } catch (_) {}
+        },
+        async setMode(m) {
+          const prev = this.mode;
+          this.mode = m;
+          try {
+            const r = await fetch('/api/mode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mode: m }),
+            });
+            if (!r.ok) throw new Error(await r.text());
+          } catch (e) { this.mode = prev; alert('切换失败：' + e.message); }
+        },
+
+        // Onboarding
+        onboarding: { open: false, step: 1, scanSummary: '', chosenMode: 'active' },
+        async maybeStartOnboarding() {
+          if (localStorage.getItem('sm_onboarded') === '1') return;
+          this.onboarding.open = true;
+          this.onboarding.step = 1;
+        },
+        async onboardingScan() {
+          await this.loadDiscovery();
+          const cs = (this.discovery.clients || []).filter(c => c.installed);
+          const total = (this.discovery.servers || []).length;
+          const prot = (this.discovery.servers || []).filter(s => s.is_protected).length;
+          this.onboarding.scanSummary = cs.length === 0
+            ? '本机未检测到 MCP 客户端 — 你可以先装一个常用的（Claude Code / Cursor / Cline）'
+            : `发现 ${cs.length} 个已安装客户端，共 ${total} 个 mcpServers，已保护 ${prot} 个`;
+          this.onboarding.step = 2;
+        },
+        onboardingInstalledClients() {
+          return (this.discovery.clients || []).filter(c => c.installed);
+        },
+        async completeOnboarding() {
+          await this.setMode(this.onboarding.chosenMode);
+          localStorage.setItem('sm_onboarded', '1');
+          this.onboarding.open = false;
+          if (this.onboarding.chosenMode === 'active' && this.unprotectedCount() > 0) {
+            setTimeout(() => {
+              if (confirm(`检测到 ${this.unprotectedCount()} 个未保护的 mcpServer。\n建议立刻一键全部包装到 Sentinel-MCP？`)) this.wrapAllUnprotected();
+            }, 300);
+          }
+        },
+        dismissOnboarding() { localStorage.setItem('sm_onboarded', '1'); this.onboarding.open = false; },
+
+        // 强度
+        strength: { level: 'balanced', presets: {}, effective: {}, tool_allowlist: [], tool_denylist: [], custom_overrides: {} },
+        strengthListInput: { allowlist: '', denylist: '' },
+        async loadStrength() {
+          try {
+            const r = await fetch('/api/strength');
+            this.strength = await r.json();
+            this.strengthListInput.allowlist = (this.strength.tool_allowlist || []).join(', ');
+            this.strengthListInput.denylist = (this.strength.tool_denylist || []).join(', ');
+          } catch (_) {}
+        },
+        async setStrengthLevel(lvl) {
+          const prev = this.strength.level;
+          this.strength.level = lvl;
+          try {
+            const r = await fetch('/api/strength/level', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ level: lvl }),
+            });
+            if (!r.ok) throw new Error(await r.text());
+            await this.loadStrength();
+          } catch (e) { this.strength.level = prev; alert('切换失败：' + e.message); }
+        },
+        async setCustomOverride(key, value) {
+          await fetch('/api/strength/custom_override', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) });
+          await this.loadStrength();
+        },
+        async saveStrengthLists() {
+          const parse = s => s.split(',').map(t => t.trim()).filter(Boolean);
+          await Promise.all([
+            fetch('/api/strength/tool_allowlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tools: parse(this.strengthListInput.allowlist) }) }),
+            fetch('/api/strength/tool_denylist',  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tools: parse(this.strengthListInput.denylist) }) }),
+          ]);
+          await this.loadStrength();
+        },
+
+        // Hook
+        hooksState: { claude_code: {}, clients: [] },
+        async loadHooksState() { try { this.hooksState = await (await fetch('/api/hooks/status')).json(); } catch (_) {} },
+        async installClaudeHook() {
+          if (!confirm('安装 Claude Code PreToolUse hook？\n之后 Claude Code 调内置 Bash/Write/Edit 等工具都会被 Sentinel 拦截审批。\n会自动备份 ~/.claude/settings.json。')) return;
+          try {
+            const r = await fetch('/api/hooks/install', { method: 'POST' });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '安装失败');
+            alert(`✓ 已装到 ${j.settings_path}\n备份：${j.backup_path || '(原文件不存在)'}\n请重启 Claude Code 让 hook 生效。`);
+            await this.loadHooksState();
+          } catch (e) { alert('失败：' + e.message); }
+        },
+        async uninstallClaudeHook() {
+          if (!confirm('从 ~/.claude/settings.json 移除 Sentinel hook？')) return;
+          try {
+            const r = await fetch('/api/hooks/uninstall', { method: 'POST' });
+            const j = await r.json();
+            alert(j.action === 'uninstalled' ? `✓ 已移除（备份：${j.backup_path || '(无)'}）` : `没什么可移除`);
+            await this.loadHooksState();
+          } catch (e) { alert('失败：' + e.message); }
+        },
+
+        // Webhook
+        webhookList: [],
+        webhookForm: { name: '', kind: 'slack', url: '' },
+        webhookBusy: false,
+        webhookMessage: '',
+        async loadWebhooks() { try { this.webhookList = (await (await fetch('/api/webhooks')).json()).endpoints || []; } catch (_) {} },
+        async addWebhook() {
+          if (!this.webhookForm.name || !this.webhookForm.url) { this.webhookMessage = '请填写 name 和 url'; return; }
+          this.webhookBusy = true;
+          try {
+            const r = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...this.webhookForm, enabled: true }) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '保存失败');
+            this.webhookMessage = `✓ 已添加 ${j.endpoint.name}`;
+            this.webhookForm = { name: '', kind: 'slack', url: '' };
+            await this.loadWebhooks();
+          } catch (e) { this.webhookMessage = '失败：' + e.message; }
+          finally { this.webhookBusy = false; }
+        },
+        async deleteWebhook(name) {
+          if (!confirm(`删除 webhook ${name}？`)) return;
+          await fetch(`/api/webhooks/${encodeURIComponent(name)}`, { method: 'DELETE' });
+          await this.loadWebhooks();
+        },
+        async testWebhooks() {
+          this.webhookBusy = true; this.webhookMessage = '';
+          try {
+            const r = await fetch('/api/webhooks/test', { method: 'POST' });
+            const j = await r.json();
+            const ok = (j.results || []).filter(x => x.ok).length;
+            const failed = (j.results || []).filter(x => !x.ok);
+            this.webhookMessage = `✓ ${ok} 个发送成功` + (failed.length ? `；${failed.length} 个失败` : '');
+          } catch (e) { this.webhookMessage = '测试失败：' + e.message; }
+          finally { this.webhookBusy = false; }
+        },
+
+        // FS-watch toast
+        watchToast: { show: false, msg: '', unprotected: [] },
+        async wrapWatchToastServers() {
+          if (this.watchToast.unprotected.length === 0) return;
+          await this._doBulk('/api/discovery/wrap', this.watchToast.unprotected, '一键包装新 server');
+          this.watchToast.show = false;
+        },
+
+        // 自动决策
+        autoRules: [],
+        async loadAutoRules() { try { this.autoRules = (await (await fetch('/api/auto_decisions')).json()).rules || []; } catch (_) {} },
+        async addAutoDecision(toolName, decision, pidToDecide) {
+          try {
+            const r = await fetch('/api/auto_decisions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tool_name: toolName, decision, by: 'dashboard' }) });
+            if (!r.ok) throw new Error(await r.text());
+            if (pidToDecide) await this.decide(pidToDecide, decision === 'allow');
+            await this.loadAutoRules();
+          } catch (e) { alert('保存失败：' + e.message); }
+        },
+        async deleteAutoRule(toolName) {
+          if (!confirm(`删除自动规则 ${toolName}？`)) return;
+          await fetch(`/api/auto_decisions/${encodeURIComponent(toolName)}`, { method: 'DELETE' });
+          await this.loadAutoRules();
+        },
+
+        // 友好规则名
+        friendlyRule(r) {
+          const map = {
+            'mode:passive': '当前是 passive 模式',
+            'auto:allow': '命中自动批准规则',
+            'auto:deny': '命中自动拒绝规则',
+            'user_denied': '用户上次拒绝过',
+            'fs:sensitive_path': '敏感路径访问',
+            'fs:write': '写文件',
+            'fs:delete': '删除文件',
+            'sandbox:deny_cmd': '沙箱黑名单命令',
+            'sandbox:deny_path': '沙箱禁止路径',
+            'strength:tool_denylist': '强度黑名单命中',
+            'strength:tool_allowlist': '强度白名单命中',
+          };
+          if (map[r]) return map[r];
+          if (r.startsWith('dlp:')) return '敏感数据：' + r.slice(4);
+          if (r.startsWith('injection:')) return '注入风险：' + r.slice(10);
+          if (r.startsWith('sandbox:')) return '沙箱：' + r.slice(8);
+          if (r.startsWith('fs:')) return '文件：' + r.slice(3);
+          if (r.startsWith('auto:')) return '自动决策：' + r.slice(5);
+          if (r.startsWith('mode:')) return '模式：' + r.slice(5);
+          return r;
+        },
+
+        // client logo
+        clientIconBg(key) {
+          const palette = ['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#84cc16','#3b82f6','#f97316','#14b8a6','#a855f7'];
+          let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+          return palette[h % palette.length];
+        },
+        clientInitial(name) {
+          const cleaned = (name || '').replace(/\(.*?\)/g, '').trim();
+          const parts = cleaned.split(/\s+/).slice(0, 2);
+          return parts.map(p => p[0] || '').join('').toUpperCase().slice(0, 2);
+        },
 
         async installPwa() {
-          if (!_deferredPrompt) {
-            alert('当前浏览器/页面尚未触发 PWA 安装事件。\nMac Chrome：右上角地址栏 ⊕ 图标；\niOS Safari：分享 → 添加到主屏幕。');
-            return;
-          }
+          if (!_deferredPrompt) { alert('当前浏览器尚未触发 PWA 安装事件'); return; }
           _deferredPrompt.prompt();
           await _deferredPrompt.userChoice;
-          _deferredPrompt = null;
-          this.canInstall = false;
+          _deferredPrompt = null; this.canInstall = false;
         },
 
-        sseLabel() {
-          if (this.sseState === 'open') return '实时连接中';
-          if (this.sseState === 'connecting') return '正在连接...';
-          return '连接断开（重试中）';
-        },
+        sseLabel() { return { open: '实时连接中', connecting: '连接中', closed: '已断开' }[this.sseState]; },
 
-        // 仅在用户改过滤条件时调用（SSE 不带过滤参数，统一在客户端做）
         async reload() {
           const params = new URLSearchParams();
           params.set('limit', '200');
@@ -331,42 +1945,26 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ approved, by: 'dashboard' })
             });
-            if (!r.ok) {
-              const detail = await r.text();
-              alert(`审批失败：${detail}`);
-            } else {
-              // 乐观去除：等下 SSE 的 decided 事件也会兜底刷新
-              this.pending = this.pending.filter(x => x.id !== pid);
-            }
-          } catch (e) {
-            alert(`网络异常：${e}`);
-          }
+            if (!r.ok) { alert(`审批失败：${await r.text()}`); }
+            else { this.pending = this.pending.filter(x => x.id !== pid); }
+          } catch (e) { alert(`网络异常：${e}`); }
         },
 
         async refreshStats() {
-          try {
-            this.stats = await (await fetch('/api/stats')).json();
-          } catch (_) { /* 忽略瞬时网络抖动 */ }
+          try { this.stats = await (await fetch('/api/stats')).json(); } catch (_) {}
         },
 
-        // SSE 主推流：拿到事件 → 去重 → 插队头 → 触发高亮
         connectSSE() {
           if (this._es) { try { this._es.close(); } catch(_) {} }
           this.sseState = 'connecting';
           const es = new EventSource('/api/events/stream');
           this._es = es;
-
-          es.addEventListener('hello', () => {
-            this.sseState = 'open';
-          });
-
+          es.addEventListener('hello', () => { this.sseState = 'open'; });
           es.addEventListener('event', (msg) => {
             this.sseState = 'open';
             let evt;
             try { evt = JSON.parse(msg.data); } catch (e) { return; }
-            // SSE 一上来会推一次 backlog；我们按 id 去重避免和初始 reload 重复
             if (this.events.some(e => e.id === evt.id)) return;
-            // 客户端做过滤（避免 SSE 也得带 query）
             if (this.filters.decision && evt.decision !== this.filters.decision) return;
             if (this.filters.min_risk && (evt.risk_score ?? 0) < this.filters.min_risk) return;
             if (this.filters.tool_name && !(evt.tool_name || '').includes(this.filters.tool_name)) return;
@@ -378,49 +1976,56 @@
               if (i >= 0) this.events[i] = { ...this.events[i], _fresh: false };
             }, 1500);
           });
-
           es.addEventListener('pending', (msg) => {
             try {
               const p = JSON.parse(msg.data);
               if (this.pending.some(x => x.id === p.id)) return;
               this.pending.unshift(p);
-              // 浏览器原生通知（如果用户已授权 Notification 权限）
               if (window.Notification && Notification.permission === 'granted') {
                 new Notification(`Sentinel-MCP · 待授权：${p.tool_name}`, {
                   body: p.reason || '点击 dashboard 处理',
-                  icon: '/icon-192.png',
-                  tag: p.id,
+                  icon: '/icon-192.png', tag: p.id,
                 });
               }
             } catch (_) {}
           });
-
           es.addEventListener('decided', (msg) => {
             try {
               const p = JSON.parse(msg.data);
               this.pending = this.pending.filter(x => x.id !== p.id);
-              // 同步进历史，置顶；去重防 SSE 回放
               if (!this.history.some(x => x.id === p.id)) {
                 this.history.unshift(p);
                 if (this.history.length > 200) this.history.length = 200;
               }
             } catch (_) {}
           });
-
-          es.onerror = () => {
-            this.sseState = 'closed';
-            // EventSource 会自动重连，这里只更新状态；UI 显示「重试中」
-          };
+          es.addEventListener('watch', (msg) => {
+            try {
+              const evt = JSON.parse(msg.data);
+              const diff = evt.diff || {};
+              const unp = diff.unprotected_added || [];
+              const added = diff.added || [];
+              const removed = diff.removed || [];
+              if (unp.length > 0) {
+                const names = unp.slice(0, 3).map(s => s.server_name).join(', ');
+                const more = unp.length > 3 ? ` 等 ${unp.length} 个` : '';
+                this.watchToast = { show: true, msg: `检测到新增未保护 server：${names}${more}`, unprotected: unp };
+                setTimeout(() => { this.watchToast.show = false; }, 8000);
+              } else if (added.length > 0 || removed.length > 0) {
+                this.watchToast = { show: true, msg: `客户端 config 变更（+${added.length} -${removed.length}），已重新扫描`, unprotected: [] };
+                setTimeout(() => { this.watchToast.show = false; }, 5000);
+              }
+              this.loadDiscovery();
+            } catch (_) {}
+          });
+          es.onerror = () => { this.sseState = 'closed'; };
         },
 
         async requestNotifyPermission() {
           if (!window.Notification) return;
-          if (Notification.permission === 'default') {
-            try { await Notification.requestPermission(); } catch (_) {}
-          }
+          if (Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (_) {} }
         },
 
-        // ---- Web Push（VAPID 直推 FCM/Mozilla autopush）----
         _b64ToUint8(b64) {
           const pad = '='.repeat((4 - b64.length % 4) % 4);
           const s = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
@@ -429,7 +2034,6 @@
           for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
           return buf;
         },
-
         async refreshPushState() {
           try {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
@@ -438,11 +2042,8 @@
             this.pushSubscribed = !!sub;
           } catch (_) { this.pushSubscribed = false; }
         },
-
         async togglePushSubscribe() {
-          if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            alert('当前浏览器不支持 Web Push'); return;
-          }
+          if (!('serviceWorker' in navigator) || !('PushManager' in window)) { alert('当前浏览器不支持 Web Push'); return; }
           if (Notification.permission !== 'granted') {
             const r = await Notification.requestPermission();
             if (r !== 'granted') { alert('请先允许通知'); return; }
@@ -450,60 +2051,315 @@
           const reg = await navigator.serviceWorker.ready;
           let sub = await reg.pushManager.getSubscription();
           if (sub) {
-            // 取消订阅
             try { await fetch('/api/push/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (_) {}
             await sub.unsubscribe();
             this.pushSubscribed = false;
             return;
           }
           try {
-            const res = await fetch('/api/push/vapid-public-key');
-            const { key } = await res.json();
-            sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: this._b64ToUint8(key),
-            });
-            await fetch('/api/push/subscribe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(sub),
-            });
+            const { key } = await (await fetch('/api/push/vapid-public-key')).json();
+            sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this._b64ToUint8(key) });
+            await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
             this.pushSubscribed = true;
-          } catch (e) {
-            console.error('push subscribe failed', e);
-            alert('订阅失败：' + e.message);
-          }
+          } catch (e) { alert('订阅失败：' + e.message); }
         },
 
         async loadHistory() {
           try {
-            const r = await fetch('/api/approvals?only_pending=false&limit=100');
-            const j = await r.json();
-            // 只保留已决断的（pending 已经在「待审批」面板里）
+            const j = await (await fetch('/api/approvals?only_pending=false&limit=100')).json();
             this.history = (j.approvals || []).filter(x => x.status !== 'pending');
           } catch (_) {}
+        },
+
+        // Discovery
+        discovery: { platform: '', clients: [], servers: [] },
+        discoveryLoaded: false, discoveryBusy: false, discoveryMessage: '', discoverySuccess: false,
+        selected: {},
+        serverKey(s) { return [s.client_key, s.config_path, s.scope, s.server_name].join('||'); },
+        discoverySummary() {
+          const cs = this.discovery.clients || [];
+          const installed = cs.filter(c => c.installed);
+          const total = (this.discovery.servers || []).length;
+          const prot = (this.discovery.servers || []).filter(s => s.is_protected).length;
+          if (cs.length === 0) return '扫描中...';
+          if (installed.length === 0) return '未检测到任何已安装的 MCP 客户端';
+          return `检测到 ${installed.length} / ${cs.length} 个客户端 · ${prot} / ${total} 个 mcpServers 已被 Sentinel 保护`;
+        },
+        protectedCount() { return (this.discovery.servers || []).filter(s => s.is_protected).length; },
+        unprotectedCount() { return (this.discovery.servers || []).filter(s => !s.is_protected).length; },
+        selectedCount() { return Object.values(this.selected).filter(Boolean).length; },
+        allSelected() {
+          const ss = this.discovery.servers || [];
+          return ss.length > 0 && ss.every(s => this.selected[this.serverKey(s)]);
+        },
+        toggleSelectAll() {
+          const all = this.allSelected();
+          const next = {};
+          for (const s of (this.discovery.servers || [])) next[this.serverKey(s)] = !all;
+          this.selected = next;
+        },
+        toggleOne(s) { const k = this.serverKey(s); this.selected = { ...this.selected, [k]: !this.selected[k] }; },
+        async loadDiscovery() {
+          this.discoveryBusy = true;
+          try {
+            this.discovery = await (await fetch('/api/discovery/scan')).json();
+            this.discoveryLoaded = true;
+            this.selected = {};
+          } catch (e) { this.discoveryMessage = '扫描失败：' + e.message; this.discoverySuccess = false; }
+          finally { this.discoveryBusy = false; }
+        },
+        _selectionFromServer(s) { return { client_key: s.client_key, config_path: s.config_path, scope: s.scope, server_name: s.server_name }; },
+        async _doBulk(endpoint, servers, verb) {
+          if (!servers || servers.length === 0) return;
+          this.discoveryBusy = true; this.discoveryMessage = '';
+          try {
+            const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ selections: servers.map(s => this._selectionFromServer(s)) }) });
+            const j = await r.json();
+            const results = j.results || [];
+            const ok = results.filter(x => x.ok && (x.action === 'wrapped' || x.action === 'unwrapped')).length;
+            const skipped = results.filter(x => x.action === 'skipped').length;
+            const failed = results.filter(x => !x.ok);
+            this.discoverySuccess = failed.length === 0;
+            let msg = `✓ ${verb}成功 ${ok} 个`;
+            if (skipped) msg += ` · 跳过 ${skipped}`;
+            if (failed.length) msg += `\n✗ 失败 ${failed.length}：` + failed.map(x => `${x.server_name}=${x.error}`).join('；');
+            if (ok > 0) msg += `\n⚠ 请重启对应客户端使配置生效。`;
+            this.discoveryMessage = msg;
+            await this.loadDiscovery();
+          } catch (e) { this.discoverySuccess = false; this.discoveryMessage = `${verb}失败：` + e.message; }
+          finally { this.discoveryBusy = false; }
+        },
+        wrapOne(s) { this._doBulk('/api/discovery/wrap', [s], '包装'); },
+        unwrapOne(s) { this._doBulk('/api/discovery/unwrap', [s], '解除'); },
+        wrapSelected() {
+          const ss = (this.discovery.servers || []).filter(s => this.selected[this.serverKey(s)]);
+          this._doBulk('/api/discovery/wrap', ss, '批量包装');
+        },
+        unwrapSelected() {
+          const ss = (this.discovery.servers || []).filter(s => this.selected[this.serverKey(s)]);
+          this._doBulk('/api/discovery/unwrap', ss, '批量解除');
+        },
+        wrapAllUnprotected() {
+          const ss = (this.discovery.servers || []).filter(s => !s.is_protected);
+          if (ss.length === 0) return;
+          if (!confirm(`确认把这 ${ss.length} 个未保护的 mcpServer 全部包装到 Sentinel-MCP？\n（每个 config 文件会自动备份。）`)) return;
+          this._doBulk('/api/discovery/wrap', ss, '一键全部包装');
+        },
+
+        // 集成预设
+        integrations: { platform: '', clients: [] }, integrationsLoaded: false, presets: {},
+        installModal: { open: false, client: null, presetKey: 'filesystem', serverName: 'filesystem-guarded', overwrite: false, inputs: {}, previewJson: '', busy: false, message: '', success: false },
+        async loadIntegrations() {
+          try {
+            const [d, p] = await Promise.all([
+              fetch('/api/integrations/detect').then(r => r.json()),
+              fetch('/api/integrations/presets').then(r => r.json()),
+            ]);
+            this.integrations = d;
+            this.presets = p.presets || {};
+            this.integrationsLoaded = true;
+          } catch (_) {}
+        },
+        openInstallModal(client) {
+          this.installModal = { open: true, client, presetKey: 'filesystem', serverName: 'filesystem-guarded', overwrite: false, inputs: {}, previewJson: '', busy: false, message: '', success: false };
+          this.presetChanged();
+        },
+        presetChanged() {
+          const p = this.presets[this.installModal.presetKey];
+          if (!p) return;
+          const inputs = {};
+          for (const i of (p.needs_input || [])) inputs[i.key] = i.default || '';
+          this.installModal.inputs = inputs;
+          this.installModal.previewJson = '';
+          this.installModal.message = '';
+          this.installModal.serverName = `${this.installModal.presetKey.replace('_', '-')}-guarded`;
+        },
+        _buildInstallPayload() {
+          const m = this.installModal;
+          const preset = this.presets[m.presetKey];
+          if (!preset) throw new Error('未选预设');
+          const args = [...preset.args];
+          const env = { ...preset.env };
+          for (const i of (preset.needs_input || [])) {
+            const v = (m.inputs[i.key] ?? '').trim() || (i.default || '');
+            if (i.patches_arg_index !== undefined) args[i.patches_arg_index] = v;
+            if (i.patches_env) env[i.patches_env] = v;
+          }
+          return { client: m.client.key, server_name: m.serverName, upstream_command: preset.command, upstream_args: args, upstream_env: env, overwrite: m.overwrite };
+        },
+        async doPreview() {
+          this.installModal.message = '';
+          try {
+            const r = await fetch('/api/integrations/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this._buildInstallPayload()) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '预览失败');
+            this.installModal.previewJson = JSON.stringify(j, null, 2);
+          } catch (e) { this.installModal.success = false; this.installModal.message = '预览失败：' + e.message; }
+        },
+        async doInstall() {
+          this.installModal.busy = true; this.installModal.message = '';
+          try {
+            const r = await fetch('/api/integrations/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this._buildInstallPayload()) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '写入失败');
+            this.installModal.success = true;
+            this.installModal.message = `✓ 已${j.action === 'created' ? '创建' : '覆盖'} server "${j.server_name}"`;
+            this.loadIntegrations();
+          } catch (e) { this.installModal.success = false; this.installModal.message = '写入失败：' + e.message; }
+          finally { this.installModal.busy = false; }
+        },
+
+        // 飞书
+        lark: { sdk_available: false, config_exists: false, notifier_active: false, app_id: '', target_chat_id: '', has_secret: false, has_encrypt_key: false, config_path: '' },
+        larkForm: { app_id: '', app_secret: '', target_chat_id: '', encrypt_key: '' },
+        larkBusy: false, larkMessage: '', larkSuccess: false,
+        larkChats: [], larkChatsBusy: false, larkChatsError: '',
+        async loadLarkChats() {
+          this.larkChatsBusy = true; this.larkChatsError = '';
+          try {
+            const j = await (await fetch('/api/lark/chats')).json();
+            if (j.error) throw new Error(j.error);
+            this.larkChats = j.chats || [];
+            if (this.larkChats.length === 0) this.larkChatsError = '机器人不在任何群里，先把机器人加到群再点';
+          } catch (e) { this.larkChatsError = '拉取失败：' + e.message; }
+          finally { this.larkChatsBusy = false; }
+        },
+        copyCallback() {
+          const url = this.cf.url ? `${this.cf.url}/api/lark/callback` : this.larkCallbackUrl();
+          navigator.clipboard.writeText(url).then(() => alert('已复制：' + url));
+        },
+        larkCallbackUrl() {
+          // 优先 cloudflared tunnel URL，否则当前 origin
+          if (this.cf?.url) return this.cf.url + '/api/lark/callback';
+          return window.location.origin + '/api/lark/callback';
+        },
+
+        // ---- cloudflared tunnel ----
+        cf: { binary_installed: false, running: false, url: null, target_port: 8766 },
+        cfBusy: false,
+        async loadCloudflared() {
+          try { this.cf = await (await fetch('/api/cloudflared/status')).json(); } catch (_) {}
+        },
+        async startCloudflared() {
+          this.cfBusy = true;
+          try {
+            const r = await (await fetch('/api/cloudflared/start', { method: 'POST' })).json();
+            if (!r.ok) {
+              alert('启动失败：' + (r.reason || '未知') + (r.hint ? '\n\n' + r.hint : '') + (r.stderr ? '\n\n' + r.stderr : ''));
+            }
+            await this.loadCloudflared();
+          } finally { this.cfBusy = false; }
+        },
+        async stopCloudflared() {
+          this.cfBusy = true;
+          try { await fetch('/api/cloudflared/stop', { method: 'POST' }); await this.loadCloudflared(); }
+          finally { this.cfBusy = false; }
+        },
+
+        // ---- 飞书每日摘要 ----
+        digest: { running: false, target_hour: 21, target_minute: 0, last_pushed_date: null },
+        digestForm: { hour: 21, minute: 0 },
+        digestBusy: false, digestMessage: '', digestSuccess: false,
+        async loadDigest() {
+          try {
+            this.digest = await (await fetch('/api/lark/digest/status')).json();
+            this.digestForm.hour = this.digest.target_hour;
+            this.digestForm.minute = this.digest.target_minute;
+          } catch (_) {}
+        },
+        async saveDigestSchedule() {
+          try {
+            const r = await (await fetch('/api/lark/digest/schedule', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ hour: this.digestForm.hour, minute: this.digestForm.minute }),
+            })).json();
+            if (r.ok) { this.digestMessage = '✓ 时间已保存'; this.digestSuccess = true; await this.loadDigest(); }
+            else { this.digestMessage = '失败：' + (r.detail || '未知'); this.digestSuccess = false; }
+          } catch (e) { this.digestMessage = '失败：' + e.message; this.digestSuccess = false; }
+        },
+        async pushDigestNow() {
+          this.digestBusy = true; this.digestMessage = '';
+          try {
+            const r = await (await fetch('/api/lark/digest/push_now', { method: 'POST' })).json();
+            if (r.ok) {
+              this.digestSuccess = true;
+              this.digestMessage = `✓ 已推送 · 今日总 ${r.stats.total} · 批准 ${r.stats.approved} · 拒绝 ${r.stats.denied} · 高风险 ${r.stats.high_risk_count}`;
+            } else {
+              this.digestSuccess = false;
+              this.digestMessage = '推送失败：' + (r.reason || '未知') + (r.error ? ' — ' + r.error : '');
+            }
+            await this.loadDigest();
+          } catch (e) { this.digestMessage = '失败：' + e.message; this.digestSuccess = false; }
+          finally { this.digestBusy = false; }
+        },
+        async loadLarkStatus() {
+          try {
+            const j = await (await fetch('/api/lark/status')).json();
+            this.lark = j;
+            this.larkForm.app_id = j.app_id || '';
+            this.larkForm.target_chat_id = j.target_chat_id || '';
+          } catch (_) {}
+        },
+        async saveLarkConfig() {
+          this.larkBusy = true; this.larkMessage = '';
+          try {
+            const payload = { ...this.larkForm };
+            if (!payload.app_secret) throw new Error('请填写 App Secret（出于安全后端不缓存原值）');
+            const r = await fetch('/api/lark/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '保存失败');
+            this.larkSuccess = true; this.larkMessage = `✓ 已保存到 ${j.saved_to}`;
+            await this.loadLarkStatus();
+          } catch (e) { this.larkSuccess = false; this.larkMessage = '保存失败：' + e.message; }
+          finally { this.larkBusy = false; }
+        },
+        async testLarkConnection() {
+          this.larkBusy = true; this.larkMessage = '';
+          try {
+            const r = await fetch('/api/lark/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Sentinel-MCP 测试 ✓' }) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || '测试失败');
+            this.larkSuccess = true; this.larkMessage = `✓ 测试消息已发送 (id=${j.message_id})`;
+          } catch (e) { this.larkSuccess = false; this.larkMessage = '测试失败：' + e.message; }
+          finally { this.larkBusy = false; }
         },
 
         async clearAll() {
           if (!confirm('清空所有审计日志？')) return;
           await fetch('/api/clear', { method: 'POST' });
-          this.events = [];
-          this.refreshStats();
+          this.events = []; this.refreshStats();
         },
 
         formatTime(ts) {
           const d = new Date(ts * 1000);
-          return d.toLocaleTimeString('zh-CN', { hour12: false }) +
-            '.' + String(d.getMilliseconds()).padStart(3, '0');
+          return d.toLocaleTimeString('zh-CN', { hour12: false });
         },
 
         init() {
-          this.reload();              // 1) 一次拉满（含历史 200 条 + stats + pending）
-          this.connectSSE();          // 2) 接 SSE 增量
-          setInterval(() => this.refreshStats(), 3000);  // 3) stats 单独慢轮询
-          this.requestNotifyPermission();   // 4) 申请桌面通知（拒绝也无所谓）
-          this.refreshPushState();           // 5) 同步 Web Push 订阅状态
-          this.loadHistory();                // 6) 预拉一次审批历史
+          // theme 初始化
+          const savedTheme = localStorage.getItem('theme');
+          if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+          else if (savedTheme === 'light') document.documentElement.classList.add('light');
+
+          this.loadDiscovery();
+          this.loadMode();
+          this.reload();
+          this.connectSSE();
+          setInterval(() => this.refreshStats(), 3000);
+          this.requestNotifyPermission();
+          this.refreshPushState();
+          this.loadHistory();
+          this.loadIntegrations();
+          this.loadLarkStatus();
+          this.loadAutoRules();
+          this.loadWebhooks();
+          this.loadStrength();
+          this.loadHooksState();
+          this.loadCloudflared();
+          this.loadDigest();
+          // cloudflared 状态轮询：跑 tunnel 时 URL 可能延迟出现
+          setInterval(() => { if (this.activeTab === 'settings' && this.settingsTab === 'lark') this.loadCloudflared(); }, 4000);
+          this.maybeStartOnboarding();
           window.addEventListener('pwa-can-install', () => { this.canInstall = true; });
         }
       };

@@ -1,6 +1,6 @@
 # Contributing to Sentinel-MCP
 
-谢谢你对 Sentinel-MCP 的关注！本项目目前在飞书 AI 黑客松冲刺期，主线开发节奏较快，
+谢谢你对 Sentinel-MCP 的关注！本项目目前在飞书 AI 校园挑战赛冲刺期，主线开发节奏较快，
 但所有代码都欢迎提 issue / PR。
 
 ## 开发环境

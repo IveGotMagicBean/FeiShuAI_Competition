@@ -1,0 +1,51 @@
+{
+  "_comment": "Bubblewrap TWA manifest for Sentinel-MCP. 把 normal-engineers-citations-registration.trycloudflare.com 替换成你的 cloudflared trycloudflare URL（不要带 https:// 前缀）。详见 docs/06_MOBILE_BUILD.md。",
+
+  "packageId": "dev.sentinel_mcp.twa",
+  "host": "normal-engineers-citations-registration.trycloudflare.com",
+  "name": "Sentinel-MCP",
+  "launcherName": "Sentinel-MCP",
+  "display": "standalone",
+  "themeColor": "#0f172a",
+  "navigationColor": "#0f172a",
+  "navigationColorDark": "#0f172a",
+  "navigationDividerColor": "#0f172a",
+  "navigationDividerColorDark": "#0f172a",
+  "backgroundColor": "#0f172a",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-512.png",
+  "maskableIconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-512-maskable.png",
+  "appVersionName": "0.2.0",
+  "appVersion": "1",
+  "shortcuts": [
+    {
+      "name": "待审批",
+      "shortName": "待审批",
+      "url": "/?tab=pending",
+      "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-192.png"
+    },
+    {
+      "name": "审计日志",
+      "shortName": "审计",
+      "url": "/?tab=audit",
+      "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-192.png"
+    }
+  ],
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "splashScreenFadeOutDuration": 300,
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://normal-engineers-citations-registration.trycloudflare.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://normal-engineers-citations-registration.trycloudflare.com/",
+  "minSdkVersion": 21,
+  "orientation": "any"
+}

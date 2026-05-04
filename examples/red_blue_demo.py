@@ -122,7 +122,8 @@ def blue_team_run() -> dict:
     banner("🔵 蓝队 · 集成 Sentinel-MCP — 每步走 Guard", C.B)
 
     cfg = ROOT / "config" / "policies.yaml"
-    audit_db = "/tmp/sentinel_redblue_demo.db"
+    # SENTINEL_DB 指向 dashboard 同一个 DB 时，事件能直接出现在 dashboard 的实时面板里
+    audit_db = os.environ.get("SENTINEL_DB", "/tmp/sentinel_redblue_demo.db")
 
     # 演示场景下：用户对每一次 ASK_USER 都拒绝（最保守）
     guard = Guard.from_yaml(

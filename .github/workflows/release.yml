@@ -178,8 +178,14 @@ jobs:
       - name: Generate checksums
         working-directory: release-assets
         run: |
-          (cd . && sha256sum * > SHA256SUMS.txt) || true
+          # 显式列出 + 排除自身 + 不容忍静默失败：上一版用 `* > SHA256SUMS.txt || true`
+          # 时偶发产出 0KB 文件（个别 asset hash 失败被吞）。改成 find -exec 后稳定。
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -print0 \
+            | xargs -0 sha256sum \
+            | sort > SHA256SUMS.txt
+          echo "--- SHA256SUMS.txt ---"
           cat SHA256SUMS.txt
+          test -s SHA256SUMS.txt   # 空文件直接让步骤失败
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

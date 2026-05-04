@@ -74,3 +74,18 @@ logs/
 node_modules/
 *.keystore
 twa-manifest.json
+
+# ---- 移动端构建产物（CI 出包，不入 git）----
+mobile/Sentinel-MCP-*.apk
+mobile/app-release-signed.apk
+mobile/app-release-signed.apk.idsig
+mobile/app-release-unsigned-aligned.apk
+mobile/app-release-bundle.aab
+mobile/build/
+mobile/app/build/
+
+# ---- 个人日报 / 中间笔记（不属于产品代码）----
+日报_*.md
+下一步计划_*.md
+PROGRESS_*.md
+UPDATE_REPORT_*.md

@@ -2,12 +2,37 @@
 
 > **客户端侧 AI Agent 安全框架** · MCP 工具调用代理 + 策略沙箱 + DLP
 >
-> 飞书 AI 校园竞赛参赛项目
+> 飞书 AI 校园挑战赛参赛项目
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-brightgreen.svg)](#)
 [![Tests](https://img.shields.io/badge/tests-86%2F86%20passing-success.svg)](#测试与基准)
 [![Attacks](https://img.shields.io/badge/attacks-53%2F53%20blocked-success.svg)](./tests/attack_cases/cases.py)
+
+<!-- ═════════════════════════════════════════════════════════════════
+     截图区（5 张，按下面顺序截好后替换 docs/screenshots/ 里的同名文件）
+
+     1. dashboard-main.png       — 桌面浏览器看 dashboard 主面板（有几条 audit 事件）
+     2. ask-user-card.png        — dashboard 「待审批」tab 一张橙色卡片展开状态
+     3. phone-pwa-locked.png     — 手机锁屏弹「Sentinel-MCP - write_file 请求授权」推送
+     4. red-blue-terminal.png    — 终端跑 examples/red_blue_demo.py 红蓝对照彩色输出
+     5. github-releases.png      — Releases 页 v0.2.0 的全套 .dmg/.msi/.AppImage/.apk 列表
+
+     截好后取消下面注释；图存到 docs/screenshots/
+     ═════════════════════════════════════════════════════════════════ -->
+
+<!--
+<p align="center">
+  <img src="docs/screenshots/dashboard-main.png" width="48%" alt="Dashboard 主面板"/>
+  &nbsp;
+  <img src="docs/screenshots/ask-user-card.png" width="48%" alt="ASK_USER 待审批卡片"/>
+</p>
+<p align="center">
+  <img src="docs/screenshots/phone-pwa-locked.png" width="30%" alt="手机锁屏推送"/>
+  &nbsp;
+  <img src="docs/screenshots/red-blue-terminal.png" width="60%" alt="红蓝对照终端输出"/>
+</p>
+-->
 
 ---
 

@@ -25,6 +25,8 @@ from typing import Any
 from guard import Decision, Guard, GuardResult, ToolCall
 from guard.detectors.dlp import DLPDetector
 
+from sentinel_mcp.runtime_mode import is_off, is_passive
+
 
 class MCPProxy:
     def __init__(
@@ -99,12 +101,64 @@ class MCPProxy:
         if msg.get("method") != "tools/call":
             return msg
 
+        # 运行时模式（dashboard 可热切换）：
+        #   off     → 完全透明转发，连 audit 都不写。仅排查 Sentinel 自己的 bug。
+        #   passive → 跳过 guard 检查（不弹审批、不拦截、不脱敏），但记录到 audit
+        #             便于「先观察一周再决定开拦截」的引入场景。
+        if is_off():
+            return msg
+
         params = msg.get("params") or {}
         tool_name = params.get("name", "<unknown>")
         args = params.get("arguments") or {}
         msg_id = msg.get("id")
 
         call = ToolCall(tool_name=tool_name, args=args, source="mcp")
+
+        if is_passive():
+            # 不调 guard.check_tool_call（避免 ASK_USER 阻塞），只记一条 audit
+            passive_result = GuardResult(
+                decision=Decision.ALLOW,
+                reason="passive 模式：未启用 Sentinel 检查",
+                risk_score=0.0,
+                triggered_rules=["mode:passive"],
+            )
+            try:
+                self.guard.audit.log_event(
+                    "tool_call", tool_name, args, passive_result, call_id=call.id
+                )
+            except Exception as e:
+                self._info(f"[passive] audit log failed: {e}")
+            self._info(f"[passive] passthrough name={tool_name} id={msg_id}")
+            return msg
+
+        # 强度档位的全局白/黑名单（最早生效，绕过 detector）
+        from sentinel_mcp import strength
+        if strength.is_tool_globally_blocked(tool_name):
+            denied = GuardResult(
+                decision=Decision.DENY,
+                reason="工具在用户黑名单（强度配置）",
+                risk_score=1.0,
+                triggered_rules=["strength:tool_denylist"],
+            )
+            try:
+                self.guard.audit.log_event("tool_call", tool_name, args, denied, call_id=call.id)
+            except Exception:
+                pass
+            await self._send_to_client(self._make_error(msg_id, denied))
+            return None
+        if strength.is_tool_globally_allowed(tool_name):
+            allowed = GuardResult(
+                decision=Decision.ALLOW,
+                reason="工具在用户白名单（强度配置）",
+                risk_score=0.0,
+                triggered_rules=["strength:tool_allowlist"],
+            )
+            try:
+                self.guard.audit.log_event("tool_call", tool_name, args, allowed, call_id=call.id)
+            except Exception:
+                pass
+            return msg
         # Guard.check_tool_call 是同步的；当工具需要 user authz 时，回调里
         # 会 sleep-poll 等审批结果。把整个调用挪到线程池避免阻塞 event loop，
         # 这样代理仍能在等待审批时收发其他 JSON-RPC 消息。

@@ -124,9 +124,31 @@ class PendingDecisions:
         timeout_seconds: float = 60.0,
         on_request: Callable[[str, dict], None] | None = None,
     ) -> Callable:
-        """给 Guard 用的 ask_user_callback 闭包。"""
+        """给 Guard 用的 ask_user_callback 闭包。
+
+        v0.3 起：在创建 pending 之前先查 auto_decisions —— 用户对该 tool
+        点过「总是批准 / 拒绝」就立刻决断，不再弹卡片、不发飞书、不响铃。
+        """
 
         def _callback(call, pending) -> bool:
+            # 1) 自动决策：跳过 pending 创建 + 等待
+            #    import 放在闭包内：让测试 monkey-patch + 用户运行时改 DEFAULT_PATH 都能立刻生效
+            from sentinel_mcp.auto_decisions import lookup_decision
+            auto = lookup_decision(call.tool_name)
+            if auto is not None:
+                # 仍记一条 audit 让用户可追溯（通过 create + 立刻 decide 复用现有路径）
+                pid = self.create(
+                    tool_name=call.tool_name,
+                    args=call.args,
+                    reason=f"自动决策: {pending.reason}",
+                    risk_score=pending.risk_score,
+                    triggered=list(pending.triggered_rules or []) + [f"auto:{auto}"],
+                    session_id=getattr(call, "session_id", "default"),
+                )
+                self.decide(pid, approved=(auto == "allow"), by="auto-decision")
+                return auto == "allow"
+
+            # 2) 否则走原来的 pending → 等审批 流程
             pid = self.create(
                 tool_name=call.tool_name,
                 args=call.args,
