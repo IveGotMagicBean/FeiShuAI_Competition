@@ -1,51 +1,47 @@
 {
-  "_comment": "Bubblewrap TWA manifest for Sentinel-MCP. 把 normal-engineers-citations-registration.trycloudflare.com 替换成你的 cloudflared trycloudflare URL（不要带 https:// 前缀）。详见 docs/06_MOBILE_BUILD.md。",
-
-  "packageId": "dev.sentinel_mcp.twa",
-  "host": "normal-engineers-citations-registration.trycloudflare.com",
+  "packageId": "dev.sentinelmcp.twa",
+  "host": "sentinel-mcp.542058929.workers.dev",
   "name": "Sentinel-MCP",
-  "launcherName": "Sentinel-MCP",
+  "launcherName": "Sentinel",
   "display": "standalone",
-  "themeColor": "#0f172a",
-  "navigationColor": "#0f172a",
-  "navigationColorDark": "#0f172a",
-  "navigationDividerColor": "#0f172a",
-  "navigationDividerColorDark": "#0f172a",
-  "backgroundColor": "#0f172a",
+  "themeColor": "#4F46E5",
+  "themeColorDark": "#0F172A",
+  "navigationColor": "#0F172A",
+  "navigationColorDark": "#0F172A",
+  "navigationDividerColor": "#0F172A",
+  "navigationDividerColorDark": "#0F172A",
+  "backgroundColor": "#FAFAFF",
   "enableNotifications": true,
-  "startUrl": "/",
-  "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-512.png",
-  "maskableIconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-512-maskable.png",
-  "appVersionName": "0.2.0",
-  "appVersion": "1",
-  "shortcuts": [
-    {
-      "name": "待审批",
-      "shortName": "待审批",
-      "url": "/?tab=pending",
-      "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-192.png"
-    },
-    {
-      "name": "审计日志",
-      "shortName": "审计",
-      "url": "/?tab=audit",
-      "iconUrl": "https://normal-engineers-citations-registration.trycloudflare.com/icon-192.png"
-    }
-  ],
+  "startUrl": "/zh",
+  "iconUrl": "https://sentinel-mcp.542058929.workers.dev/assets/icon-512.png",
+  "maskableIconUrl": "https://sentinel-mcp.542058929.workers.dev/assets/icon-512-maskable.png",
+  "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
     "alias": "android"
   },
-  "splashScreenFadeOutDuration": 300,
+  "appVersionName": "0.3.0",
+  "appVersionCode": 3,
+  "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://normal-engineers-citations-registration.trycloudflare.com/manifest.webmanifest",
+  "webManifestUrl": "https://sentinel-mcp.542058929.workers.dev/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
-  "alphaDependencies": { "enabled": false },
+  "alphaDependencies": {
+    "enabled": false
+  },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://normal-engineers-citations-registration.trycloudflare.com/",
+  "fullScopeUrl": "https://sentinel-mcp.542058929.workers.dev/",
   "minSdkVersion": 21,
-  "orientation": "any"
+  "orientation": "any",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "0.3.0"
 }
