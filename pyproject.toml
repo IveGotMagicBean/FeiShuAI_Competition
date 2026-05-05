@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sentinel-mcp"
-version = "0.2.0"
+version = "0.3.0"
 description = "Client-side AI Agent security framework — a stdio MCP proxy with policy-driven tool-call decisions, sandbox enforcement, DLP, and human-in-the-loop approvals."
 readme = "README.md"
 requires-python = ">=3.10"
