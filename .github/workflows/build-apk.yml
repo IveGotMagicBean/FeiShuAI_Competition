@@ -70,13 +70,22 @@ jobs:
           cat > /tmp/init.exp <<'EXPECT_EOF'
           #!/usr/bin/expect -f
           log_user 1
-          set timeout 600
+          # 1500s = 25min：bubblewrap 第一次跑要下 JDK (~200MB) + Android SDK (~500MB)
+          set timeout 1500
           set kpw $env(KEYSTORE_PASSWORD)
           set keypw $env(KEY_PASSWORD)
 
           spawn -noecho bubblewrap init --manifest=https://sentinel-mcp.542058929.workers.dev/manifest.webmanifest
 
           expect {
+            # ---- Bubblewrap 自带的 JDK / Android SDK / SDK license 三连问 ----
+            # 都让它自己装；selfu-java + setup-android 装的不一定符合 bubblewrap 期待的版本/路径
+            -re {Bubblewrap to install the JDK}            { send -- "Y\r"; exp_continue }
+            -re {Bubblewrap to install the Android SDK}    { send -- "Y\r"; exp_continue }
+            -re {Do you accept.*[Ll]icense}                { send -- "Y\r"; exp_continue }
+            -re {[Aa]ccept.*license}                       { send -- "Y\r"; exp_continue }
+
+            # ---- manifest 相关 ----
             -re {[Aa]pplication ID}              { send -- "dev.sentinelmcp.twa\r"; exp_continue }
             -re {[Ss]tarting version code}       { send -- "3\r"; exp_continue }
             -re {[Pp]ath to.*[Kk]eystore}        { send -- "./android.keystore\r"; exp_continue }
@@ -97,6 +106,11 @@ jobs:
             -re {Icon URL}                       { send -- "\r"; exp_continue }
             -re {Maskable icon}                  { send -- "\r"; exp_continue }
             -re {Monochrome icon}                { send -- "\r"; exp_continue }
+
+            # ---- catch-all：碰到没识别的 (Y/n) / (y/N) 默认走推荐选项 ----
+            -re {\(Y/n\)}                        { send -- "Y\r"; exp_continue }
+            -re {\(y/N\)}                        { send -- "N\r"; exp_continue }
+
             timeout {
               puts "\n\n==== TIMEOUT — bubblewrap init 卡住，未匹配到下一个 prompt ===="
               exit 2
@@ -130,12 +144,14 @@ jobs:
           cat > /tmp/update.exp <<'EXPECT_EOF'
           #!/usr/bin/expect -f
           log_user 1
-          set timeout 300
+          set timeout 900
           spawn -noecho bubblewrap update
           expect {
             -re {[Kk]eystore.*[Pp]assword} { send -- "$env(KEYSTORE_PASSWORD)\r"; exp_continue }
             -re {[Kk]ey [Pp]assword}       { send -- "$env(KEY_PASSWORD)\r"; exp_continue }
             -re {[Pp]assword}              { send -- "$env(KEYSTORE_PASSWORD)\r"; exp_continue }
+            -re {\(Y/n\)}                  { send -- "Y\r"; exp_continue }
+            -re {\(y/N\)}                  { send -- "N\r"; exp_continue }
             timeout                        { puts "\n==== UPDATE TIMEOUT ===="; exit 2 }
             eof {}
           }
