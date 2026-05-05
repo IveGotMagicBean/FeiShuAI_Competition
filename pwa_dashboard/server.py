@@ -39,6 +39,7 @@ if str(_REPO_ROOT) not in sys.path:
 from guard.audit import AuditLog  # noqa: E402
 from pwa_dashboard.push import WebPushManager  # noqa: E402
 from sentinel_mcp.approvals import PendingDecisions  # noqa: E402
+from sentinel_mcp.cloud_relay import CloudRelay, get_relay, set_relay  # noqa: E402
 
 # ---- 路径 -------------------------------------------------------
 HERE = Path(__file__).resolve().parent
@@ -978,6 +979,43 @@ def api_digest_schedule(payload: dict):
     return {"ok": True, "target_hour": h, "target_minute": m}
 
 
+# ---- 手机绑定（cloud_relay）-----------------------------------------------
+# Dashboard UI 上「绑定手机」面板调这俩：拿当前配对码 / 重新生成
+
+@app.get("/api/cloud/status")
+def api_cloud_status():
+    relay = get_relay()
+    if relay is None:
+        return {"enabled": False, "reason": "cloud_relay disabled or failed to init"}
+    return relay.status()
+
+
+@app.post("/api/cloud/rotate-pair-code")
+def api_cloud_rotate_pair_code():
+    relay = get_relay()
+    if relay is None:
+        raise HTTPException(status_code=503, detail="cloud_relay not running")
+    resp = relay.rotate_pair_code()
+    if not resp:
+        raise HTTPException(status_code=502, detail="failed to refresh pair code from cloud")
+    return relay.status()
+
+
+def _init_cloud_relay():
+    """启动 cloud_relay：把本地事件 / 待审批镜像到 Cloudflare,
+    手机 .apk 输入 6 位配对码就能远程审批。
+    SENTINEL_CLOUD_RELAY=0 关闭（默认开）。
+    """
+    if os.environ.get("SENTINEL_CLOUD_RELAY", "1") == "0":
+        return
+    try:
+        relay = CloudRelay(audit=audit, approvals=approvals)
+        relay.start()
+        set_relay(relay)
+    except Exception as ex:  # noqa: BLE001
+        print(f"[sentinel-mcp pwa] cloud_relay init failed: {ex}", file=sys.stderr)
+
+
 def main():
     import uvicorn
 
@@ -988,6 +1026,7 @@ def main():
     if host not in ("127.0.0.1", "localhost", "::1"):
         # 公网暴露 → 提前把 token 准备好让用户看到
         _auth.ensure_token()
+    _init_cloud_relay()
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 

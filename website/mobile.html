@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Sentinel-MCP · 手机端</title>
+<meta name="description" content="Sentinel-MCP 手机端 — 远程查看你电脑上的 AI 工具调用 + 一键审批"/>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<meta name="theme-color" content="#4f46e5"/>
+<link rel="apple-touch-icon" href="/assets/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png"/>
+<style>
+:root{
+  --bg:#fafaff; --bg2:#f1f1fa; --surface:#fff; --surface2:#f8f8fd;
+  --ink:#0f172a; --ink2:#475569; --ink3:#94a3b8;
+  --accent:#6366f1; --accent2:#4f46e5;
+  --accent-light:#eef2ff; --accent-mid:#c7d2fe;
+  --emerald:#10b981; --rose:#f43f5e; --amber:#f59e0b;
+  --border:#e2e8f0;
+  --sans:'DM Sans','Noto Sans SC','PingFang SC','Helvetica Neue','Microsoft YaHei',sans-serif;
+  --mono:'DM Mono','SF Mono',Menlo,Consolas,monospace;
+  --shadow:0 1px 3px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.06);
+  --shadow-lg:0 8px 32px rgba(15,23,42,.1),0 2px 8px rgba(15,23,42,.06);
+  --radius:14px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0a0a14; --bg2:#13131e; --surface:#1a1a26; --surface2:#21212e;
+    --ink:#e4e4ed; --ink2:#9ca3af; --ink3:#6b7280;
+    --accent:#818cf8; --accent2:#a5b4fc;
+    --accent-light:#1e1b4b; --accent-mid:#312e81;
+    --border:#2a2a38;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+    --shadow-lg:0 8px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.3);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--sans); background:var(--bg); color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+button{font-family:inherit;cursor:pointer;border:none;}
+input{font-family:inherit;}
+
+.hidden{display:none !important;}
+
+/* ============ 配对屏 ============ */
+#pair-screen{
+  min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:24px; gap:18px;
+}
+#pair-screen .logo{
+  width:72px; height:72px; border-radius:18px;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  display:grid; place-items:center; box-shadow:var(--shadow-lg);
+  margin-bottom:8px;
+}
+#pair-screen .logo svg{width:40px;height:40px;color:#fff;}
+#pair-screen h1{font-size:24px;font-weight:600;letter-spacing:-.01em;}
+#pair-screen p{color:var(--ink2);font-size:14px;text-align:center;line-height:1.6;max-width:320px;}
+#pair-screen .helper{color:var(--ink3);font-size:13px;}
+#pair-screen .helper code{
+  font-family:var(--mono); font-size:12px;
+  background:var(--surface); padding:2px 6px; border-radius:4px;
+  border:1px solid var(--border);
+}
+#pair-input{
+  width:100%; max-width:280px; height:64px;
+  font-family:var(--mono); font-size:32px; font-weight:600; letter-spacing:.5em;
+  text-align:center; text-indent:.5em;
+  background:var(--surface); color:var(--ink);
+  border:2px solid var(--border); border-radius:var(--radius);
+  outline:none; transition:border-color .15s, box-shadow .15s;
+}
+#pair-input:focus{border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-light);}
+#pair-btn{
+  width:100%; max-width:280px; height:52px;
+  background:var(--accent2); color:#fff;
+  font-size:16px; font-weight:600; letter-spacing:.02em;
+  border-radius:var(--radius); transition:transform .1s, opacity .15s;
+}
+#pair-btn:hover{transform:translateY(-1px);}
+#pair-btn:active{transform:translateY(0);}
+#pair-btn:disabled{opacity:.5; cursor:not-allowed;}
+#pair-error{
+  color:var(--rose); font-size:13px; text-align:center;
+  min-height:20px; max-width:280px; line-height:1.4;
+}
+
+/* ============ Dashboard 屏 ============ */
+#dash-screen{ display:flex; flex-direction:column; height:100vh; height:100dvh; }
+header{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:10;
+}
+header .brand{
+  width:32px; height:32px; border-radius:8px;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  display:grid; place-items:center;
+}
+header .brand svg{width:18px;height:18px;color:#fff;}
+header h1{font-size:16px;font-weight:600;flex:1;}
+header .status{
+  font-size:11px; color:var(--ink3); font-family:var(--mono);
+  background:var(--surface2); padding:3px 8px; border-radius:6px;
+}
+header .status.live{color:var(--emerald);}
+header button{
+  background:none; color:var(--ink2); font-size:13px;
+  padding:6px 10px; border-radius:8px;
+}
+header button:hover{background:var(--surface2); color:var(--ink);}
+
+nav{
+  display:flex; padding:0 16px; gap:4px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}
+nav button{
+  flex:1; padding:14px 8px; background:none;
+  font-size:14px; font-weight:500; color:var(--ink2);
+  border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
+}
+nav button.active{color:var(--accent2); border-bottom-color:var(--accent);}
+nav button .badge{
+  display:inline-block; min-width:20px; height:20px; padding:0 6px;
+  margin-left:4px; border-radius:10px; font-size:11px; line-height:20px;
+  background:var(--accent-light); color:var(--accent2); font-weight:600;
+}
+nav button.has-pending .badge{background:var(--rose); color:#fff;}
+
+main{flex:1; overflow-y:auto; padding:12px; -webkit-overflow-scrolling:touch;}
+
+.card{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px;
+  box-shadow:var(--shadow); margin-bottom:12px;
+}
+.card.pending{border-left:4px solid var(--amber);}
+.card.allow{border-left:4px solid var(--emerald);}
+.card.deny{border-left:4px solid var(--rose);}
+.card.ask_user{border-left:4px solid var(--amber);}
+
+.card .row{
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.card .tool{
+  font-family:var(--mono); font-size:14px; font-weight:600;
+  color:var(--ink); flex:1;
+}
+.card .decision{
+  font-size:11px; padding:2px 8px; border-radius:4px;
+  text-transform:uppercase; letter-spacing:.05em; font-weight:600;
+}
+.card .decision.allow{background:#d1fae5; color:#065f46;}
+.card .decision.deny{background:#ffe4e6; color:#9f1239;}
+.card .decision.ask_user{background:#fef3c7; color:#92400e;}
+@media(prefers-color-scheme:dark){
+  .card .decision.allow{background:#064e3b; color:#6ee7b7;}
+  .card .decision.deny{background:#7f1d1d; color:#fda4af;}
+  .card .decision.ask_user{background:#78350f; color:#fcd34d;}
+}
+.card .risk{
+  font-family:var(--mono); font-size:12px; color:var(--ink3);
+  background:var(--surface2); padding:2px 6px; border-radius:4px;
+}
+.card .reason{font-size:13px; color:var(--ink2); line-height:1.5; margin-bottom:8px;}
+.card .args{
+  font-family:var(--mono); font-size:11px; color:var(--ink2);
+  background:var(--surface2); padding:8px 10px; border-radius:8px;
+  white-space:pre-wrap; word-break:break-all; max-height:160px; overflow-y:auto;
+  margin-bottom:8px;
+}
+.card time{font-size:11px; color:var(--ink3); font-family:var(--mono);}
+.card .actions{display:flex; gap:8px; margin-top:10px;}
+.card .actions button{
+  flex:1; padding:10px; border-radius:10px;
+  font-size:14px; font-weight:600;
+  transition:transform .1s, opacity .15s;
+}
+.card .actions button:active{transform:scale(.97);}
+.card .btn-approve{background:var(--emerald); color:#fff;}
+.card .btn-deny{background:var(--rose); color:#fff;}
+.card .btn-approve:disabled,.card .btn-deny:disabled{opacity:.4;cursor:wait;}
+
+.empty{
+  text-align:center; color:var(--ink3); font-size:14px;
+  padding:48px 16px; line-height:1.6;
+}
+.empty .emoji{font-size:32px; display:block; margin-bottom:8px; opacity:.5;}
+</style>
+</head>
+<body>
+
+<!-- ============ 配对屏 ============ -->
+<section id="pair-screen">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+  </div>
+  <h1>绑定到你的电脑</h1>
+  <p>在你电脑的 Sentinel-MCP dashboard 上找到 <strong>「绑定手机」</strong> 面板，把 6 位配对码输入下面。</p>
+  <input id="pair-input" maxlength="6" placeholder="ABC123" autocomplete="off" spellcheck="false" inputmode="latin"/>
+  <button id="pair-btn">绑定</button>
+  <div id="pair-error"></div>
+  <div class="helper">桌面端 dashboard 默认地址 <code>http://127.0.0.1:8766</code></div>
+</section>
+
+<!-- ============ Dashboard 屏 ============ -->
+<section id="dash-screen" class="hidden">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    </div>
+    <h1>Sentinel</h1>
+    <span id="status-pill" class="status">连接中…</span>
+    <button id="unbind-btn" title="解绑">⚙</button>
+  </header>
+  <nav>
+    <button data-tab="pending" class="active">待审批 <span class="badge" id="pending-count">0</span></button>
+    <button data-tab="events">事件流</button>
+  </nav>
+  <main id="pending-panel"></main>
+  <main id="events-panel" class="hidden"></main>
+</section>
+
+<script>
+'use strict';
+
+const MOBILE_TOKEN_KEY = 'sentinel_mobile_token';
+const INSTANCE_ID_KEY = 'sentinel_instance_id';
+
+let mobileToken = localStorage.getItem(MOBILE_TOKEN_KEY);
+let instanceId = localStorage.getItem(INSTANCE_ID_KEY);
+let pollTimer = null;
+let lastEventTs = 0;
+let allEvents = [];
+let consecutiveErrors = 0;
+
+// ---- DOM helpers --------------------------------------------------------
+
+const $ = (sel) => document.querySelector(sel);
+const escapeHtml = (s) => String(s ?? "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function fmtTime(ts) {
+  if (!ts) return "";
+  const ms = ts > 1e12 ? ts : ts * 1000;
+  return new Date(ms).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+// ---- API ---------------------------------------------------------------
+
+async function api(method, path, body) {
+  const headers = { "content-type": "application/json" };
+  if (mobileToken) headers["x-mobile-token"] = mobileToken;
+  const opts = { method, headers };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = new Error(`${method} ${path} → ${r.status}`);
+    err.status = r.status;
+    throw err;
+  }
+  return r.json();
+}
+
+// ---- Pair flow ---------------------------------------------------------
+
+async function tryRedeem() {
+  const input = $("#pair-input");
+  const btn = $("#pair-btn");
+  const errEl = $("#pair-error");
+  errEl.textContent = "";
+  const code = input.value.trim().toUpperCase();
+  if (!/^[A-Z2-9]{6}$/.test(code)) {
+    errEl.textContent = "请输入 6 位配对码（A-Z 2-9，区分字母 O 和数字 0）";
+    return;
+  }
+  btn.disabled = true; btn.textContent = "绑定中…";
+  try {
+    const resp = await fetch("/api/pair/redeem", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      const map = {
+        404: "配对码不存在或已过期（5 分钟有效），请去电脑 dashboard 重新生成",
+        400: "配对码格式错误",
+        410: "实例已过期",
+      };
+      errEl.textContent = map[resp.status] || `配对失败：${e.error || resp.status}`;
+      return;
+    }
+    const data = await resp.json();
+    mobileToken = data.mobile_token;
+    instanceId = data.instance_id;
+    localStorage.setItem(MOBILE_TOKEN_KEY, mobileToken);
+    localStorage.setItem(INSTANCE_ID_KEY, instanceId);
+    showDashboard();
+  } catch (e) {
+    errEl.textContent = `网络错误：${e.message}`;
+  } finally {
+    btn.disabled = false; btn.textContent = "绑定";
+  }
+}
+
+function unbind() {
+  if (!confirm("解绑后需要重新输入配对码，确认？")) return;
+  mobileToken = null; instanceId = null;
+  localStorage.removeItem(MOBILE_TOKEN_KEY);
+  localStorage.removeItem(INSTANCE_ID_KEY);
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  showPair();
+}
+
+// ---- Screen toggles ----------------------------------------------------
+
+function showPair() {
+  $("#pair-screen").classList.remove("hidden");
+  $("#dash-screen").classList.add("hidden");
+  setTimeout(() => $("#pair-input").focus(), 100);
+}
+
+function showDashboard() {
+  $("#pair-screen").classList.add("hidden");
+  $("#dash-screen").classList.remove("hidden");
+  lastEventTs = 0; allEvents = [];
+  refresh();
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(refresh, 2000);
+}
+
+// ---- Refresh loop ------------------------------------------------------
+
+async function refresh() {
+  try {
+    const [evResp, aprResp] = await Promise.all([
+      api("GET", `/api/events/list?since=${lastEventTs}&limit=50`),
+      api("GET", "/api/approvals/list?only_pending=1"),
+    ]);
+    if (evResp.next_since && evResp.next_since > lastEventTs) lastEventTs = evResp.next_since;
+    if (evResp.events && evResp.events.length) {
+      allEvents = [...evResp.events.reverse(), ...allEvents].slice(0, 100);
+      renderEvents();
+    } else if (allEvents.length === 0) {
+      renderEvents(); // initial empty state
+    }
+    renderApprovals(aprResp.approvals || []);
+    consecutiveErrors = 0;
+    setStatus("已连接", true);
+  } catch (e) {
+    consecutiveErrors++;
+    if (e.status === 401) {
+      // token 失效 → 强制重新配对
+      localStorage.removeItem(MOBILE_TOKEN_KEY);
+      localStorage.removeItem(INSTANCE_ID_KEY);
+      mobileToken = null; instanceId = null;
+      showPair();
+      $("#pair-error").textContent = "登录失效，请重新输入配对码";
+      return;
+    }
+    setStatus(consecutiveErrors > 3 ? "离线" : "连接中…", false);
+  }
+}
+
+function setStatus(text, live) {
+  const pill = $("#status-pill");
+  pill.textContent = text;
+  pill.classList.toggle("live", live);
+}
+
+// ---- Render ------------------------------------------------------------
+
+function renderApprovals(approvals) {
+  const count = approvals.length;
+  const countEl = $("#pending-count");
+  const navBtn = document.querySelector('nav button[data-tab="pending"]');
+  countEl.textContent = count;
+  navBtn.classList.toggle("has-pending", count > 0);
+
+  if (count === 0) {
+    $("#pending-panel").innerHTML = `<div class="empty"><span class="emoji">✓</span>当前没有待审批的工具调用</div>`;
+    return;
+  }
+  $("#pending-panel").innerHTML = approvals.map(a => `
+    <div class="card pending" data-id="${escapeHtml(a.id)}">
+      <div class="row">
+        <span class="tool">${escapeHtml(a.tool_name || "?")}</span>
+        <span class="risk">⚠ ${(a.risk_score ?? 0).toFixed(2)}</span>
+      </div>
+      <div class="reason">${escapeHtml(a.reason || "需要用户确认")}</div>
+      <div class="args">${escapeHtml(JSON.stringify(a.args || {}, null, 2))}</div>
+      <time>${fmtTime(a._ts || a.created_at)}</time>
+      <div class="actions">
+        <button class="btn-deny" data-id="${escapeHtml(a.id)}" data-ok="0">拒绝</button>
+        <button class="btn-approve" data-id="${escapeHtml(a.id)}" data-ok="1">批准</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderEvents() {
+  if (allEvents.length === 0) {
+    $("#events-panel").innerHTML = `<div class="empty"><span class="emoji">⏳</span>暂无事件 — 在电脑上调用任意 MCP 工具会实时显示在这里</div>`;
+    return;
+  }
+  $("#events-panel").innerHTML = allEvents.map(e => `
+    <div class="card ${escapeHtml(e.decision || '')}">
+      <div class="row">
+        <span class="tool">${escapeHtml(e.tool_name || "?")}</span>
+        <span class="decision ${escapeHtml(e.decision || '')}">${escapeHtml(e.decision || "?")}</span>
+        <span class="risk">${(e.risk_score ?? 0).toFixed(2)}</span>
+      </div>
+      ${e.reason ? `<div class="reason">${escapeHtml(e.reason)}</div>` : ""}
+      <time>${fmtTime(e._ts || e.timestamp)}</time>
+    </div>
+  `).join("");
+}
+
+async function decide(id, approved, btnEl) {
+  const card = btnEl.closest(".card");
+  const btns = card.querySelectorAll("button");
+  btns.forEach(b => b.disabled = true);
+  try {
+    await api("POST", "/api/approvals/decide", { id, approved, by: "phone" });
+    card.style.opacity = ".4";
+    setTimeout(refresh, 200);
+  } catch (e) {
+    btns.forEach(b => b.disabled = false);
+    alert("决策失败：" + e.message);
+  }
+}
+
+// ---- Wire up -----------------------------------------------------------
+
+$("#pair-btn").addEventListener("click", tryRedeem);
+$("#pair-input").addEventListener("keypress", (e) => { if (e.key === "Enter") tryRedeem(); });
+$("#pair-input").addEventListener("input", (e) => {
+  e.target.value = e.target.value.toUpperCase();
+});
+$("#unbind-btn").addEventListener("click", unbind);
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-ok]");
+  if (t) {
+    const id = t.dataset.id;
+    const ok = t.dataset.ok === "1";
+    decide(id, ok, t);
+  }
+});
+
+document.querySelectorAll('nav button[data-tab]').forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button[data-tab]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    $("#pending-panel").classList.toggle("hidden", tab !== "pending");
+    $("#events-panel").classList.toggle("hidden", tab !== "events");
+  });
+});
+
+// ---- Boot --------------------------------------------------------------
+
+if (mobileToken) showDashboard();
+else showPair();
+</script>
+</body>
+</html>

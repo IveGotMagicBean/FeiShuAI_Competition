@@ -687,6 +687,20 @@ footer a:hover{color:var(--accent);}
   footer{padding:1.5rem;}
 }
 </style>
+<script>
+// 装好的 PWA（TWA / Add to Home Screen）+ 移动端 → 直接跳手机端 dashboard
+// 普通桌面浏览器访问继续看 marketing 落地页
+(function(){
+  try {
+    var standalone = window.matchMedia('(display-mode: standalone)').matches
+                  || window.navigator.standalone === true;
+    var mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (standalone && mobile && location.pathname !== '/mobile.html') {
+      location.replace('/mobile.html');
+    }
+  } catch(e) { /* fail open: 留在落地页 */ }
+})();
+</script>
 </head>
 <body>
 

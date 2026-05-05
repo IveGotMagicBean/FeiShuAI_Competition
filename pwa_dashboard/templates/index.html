@@ -1145,11 +1145,62 @@
         <!-- ===================================================== -->
         <section x-show="activeTab==='settings'" x-cloak>
           <div class="tabs" style="overflow-x:auto;">
+            <button :class="{active: settingsTab==='phone'}" @click="settingsTab='phone'; loadCloudStatus()">📱 绑定手机</button>
             <button :class="{active: settingsTab==='lark'}" @click="settingsTab='lark'">📨 飞书</button>
             <button :class="{active: settingsTab==='strength'}" @click="settingsTab='strength'">⚖ 拦截强度</button>
             <button :class="{active: settingsTab==='hook'}" @click="settingsTab='hook'">🔗 Hook</button>
             <button :class="{active: settingsTab==='auto'}" @click="settingsTab='auto'">⚡ 自动决策</button>
             <button :class="{active: settingsTab==='presets'}" @click="settingsTab='presets'; if(!integrationsLoaded) loadIntegrations()">🔌 MCP 预设</button>
+          </div>
+
+          <!-- 绑定手机（cloud_relay 配对码）-->
+          <div x-show="settingsTab==='phone'" x-cloak>
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-header">
+                <div>
+                  <h3>📱 绑定手机端</h3>
+                  <p>把你的手机 .apk 绑定到这台机器，远程审批就只看到你电脑的事</p>
+                </div>
+                <span class="pill" :class="cloudStatus.enabled ? 'pill-success' : 'pill-mute'" x-text="cloudStatus.enabled ? '在线' : '未连接'"></span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+
+                <template x-if="!cloudStatus.enabled">
+                  <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
+                    cloud_relay 未启动 — 默认会自启，如果显示「未连接」请：<br>
+                    1. 检查能否访问 <code x-text="cloudStatus.cloud_base || 'sentinel-mcp.542058929.workers.dev'"></code>（本机要能访问）<br>
+                    2. 设环境变量 <code>SENTINEL_CLOUD_RELAY=1</code> 重启 dashboard<br>
+                    3. Cloudflare 后台检查 PAIR_KV namespace 是否绑定（部署者首次需配）
+                  </p>
+                </template>
+
+                <template x-if="cloudStatus.enabled">
+                  <div>
+                    <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;">
+                      手机打开 .apk → 输入下面这串 6 位配对码（5 分钟有效）
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <code class="pair-code" style="font-family:var(--mono);font-size:36px;font-weight:700;letter-spacing:.3em;padding:14px 22px;background:var(--surface-2);border:2px solid var(--accent);border-radius:12px;color:var(--accent);" x-text="cloudStatus.pair_code || '------'"></code>
+                      <button @click="rotatePairCode()" :disabled="cloudBusy" class="btn btn-secondary btn-sm">🔄 重新生成</button>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-3);margin-top:8px;">
+                      Instance ID: <code x-text="cloudStatus.instance_id || '-'"></code>
+                    </div>
+                  </div>
+                </template>
+
+                <details style="border-top:1px solid var(--border);padding-top:12px;">
+                  <summary style="font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;">手机怎么装、怎么用？</summary>
+                  <ol style="font-size:12px;color:var(--text-2);line-height:1.8;margin:10px 0 0 18px;">
+                    <li>从 Releases 下载 <code>Sentinel-MCP-v0.3.0.apk</code> 装到安卓手机</li>
+                    <li>第一次点开会进配对界面，把上面这 6 位码输入</li>
+                    <li>绑定成功后看到 dashboard：待审批 / 事件流 两个 tab</li>
+                    <li>电脑上 ASK_USER 弹起的待审批，会同步到手机 → 一键批 / 拒</li>
+                    <li>手机决策会回流到这台电脑（通过 cloud_relay 后台 poll）</li>
+                  </ol>
+                </details>
+              </div>
+            </div>
           </div>
 
           <!-- 强度 -->
@@ -2254,6 +2305,27 @@
           this.cfBusy = true;
           try { await fetch('/api/cloudflared/stop', { method: 'POST' }); await this.loadCloudflared(); }
           finally { this.cfBusy = false; }
+        },
+
+        // ---- 手机绑定（cloud_relay 配对码）----
+        cloudStatus: { enabled: false, pair_code: null, instance_id: null, cloud_base: '' },
+        cloudBusy: false,
+        async loadCloudStatus() {
+          try { this.cloudStatus = await (await fetch('/api/cloud/status')).json(); }
+          catch (_) { this.cloudStatus = { enabled: false }; }
+        },
+        async rotatePairCode() {
+          this.cloudBusy = true;
+          try {
+            const r = await fetch('/api/cloud/rotate-pair-code', { method: 'POST' });
+            if (!r.ok) {
+              const e = await r.json().catch(() => ({}));
+              alert('生成失败：' + (e.detail || r.status));
+            } else {
+              this.cloudStatus = await r.json();
+            }
+          } catch (e) { alert('网络错误：' + e.message); }
+          finally { this.cloudBusy = false; }
         },
 
         // ---- 飞书每日摘要 ----
