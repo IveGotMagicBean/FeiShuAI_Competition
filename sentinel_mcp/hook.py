@@ -32,7 +32,6 @@ import time
 from pathlib import Path
 
 from guard import Decision, Guard, ToolCall
-
 from sentinel_mcp.runtime_mode import is_off, is_passive
 
 

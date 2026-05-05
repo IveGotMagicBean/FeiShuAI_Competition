@@ -5,19 +5,16 @@
 
 from __future__ import annotations
 
-import io
 import json
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pwa_dashboard import hooks_installer as hi
-
 
 # ------------------------------------------------------------------ #
 # hooks_installer

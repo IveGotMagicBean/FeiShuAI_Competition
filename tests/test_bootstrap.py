@@ -44,8 +44,8 @@ def test_idempotent_when_already_correct():
         with _patch_paths(Path(td)):
             bs.ensure_shim(log=lambda _: None)
             content1 = bs.SHIM_PATH.read_text()
-            mtime1 = bs.SHIM_PATH.stat().st_mtime
-            import time as _t; _t.sleep(0.05)  # 让 mtime 有差
+            # (mtime check no longer needed)
+            __import__("time").sleep(0.05)  # 让 mtime 有差
             r2 = bs.ensure_shim(log=lambda _: None)
             content2 = bs.SHIM_PATH.read_text()
             # 内容应一致

@@ -6,17 +6,14 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 # 让 import 可达项目根
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pwa_dashboard import integrations as integ  # noqa: E402
-
 
 # ------------------------------------------------------------------ #
 # 工具
@@ -166,7 +163,7 @@ def test_install_refuses_overwrite_by_default():
                 upstream_command="npx",
                 upstream_args=["x"],
             )
-            assert False, "应该 raise ValueError"
+            raise AssertionError("应该 raise ValueError")
         except ValueError as e:
             assert "已存在" in str(e) or "exist" in str(e).lower()
 
@@ -201,7 +198,7 @@ def test_install_validates_server_name():
                     upstream_command="npx",
                     upstream_args=["x"],
                 )
-                assert False, f"should reject server_name={bad!r}"
+                raise AssertionError(f"should reject server_name={bad!r}")
             except ValueError:
                 pass
 
@@ -209,7 +206,7 @@ def test_install_validates_server_name():
 def test_install_unknown_client_raises():
     try:
         integ.install("nonexistent_client", "x", "npx", [])
-        assert False
+        raise AssertionError()
     except ValueError as e:
         assert "unknown" in str(e).lower()
 

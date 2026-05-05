@@ -35,7 +35,7 @@ def test_invalid_level_raises():
     with tempfile.TemporaryDirectory() as td, _patched(td):
         try:
             st.write_level("HACK")  # type: ignore[arg-type]
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "未知 level" in str(e)
 

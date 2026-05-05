@@ -22,7 +22,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-
 # ---------- 客户端定义 -----------------------------------------------
 
 @dataclass

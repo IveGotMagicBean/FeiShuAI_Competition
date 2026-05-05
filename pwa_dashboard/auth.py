@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import os
 import secrets
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse

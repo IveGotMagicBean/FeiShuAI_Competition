@@ -56,7 +56,7 @@ def test_invalid_decision_raises():
         p = Path(td) / "rules.json"
         try:
             ad.add_rule("x", "maybe", path=p)  # type: ignore[arg-type]
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "decision 必须是" in str(e)
 
@@ -66,7 +66,7 @@ def test_empty_tool_name_raises():
         p = Path(td) / "rules.json"
         try:
             ad.add_rule("", "allow", path=p)
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "tool_name" in str(e)
 
@@ -89,8 +89,9 @@ def test_chmod_to_600():
 
 def test_callback_short_circuits_on_auto_decision():
     """integration: approvals.make_callback 应该用 auto_decisions 直接决断。"""
-    from sentinel_mcp.approvals import PendingDecisions
     from unittest.mock import MagicMock, patch
+
+    from sentinel_mcp.approvals import PendingDecisions
 
     with tempfile.TemporaryDirectory() as td:
         rules_path = Path(td) / "rules.json"

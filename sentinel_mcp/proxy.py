@@ -24,7 +24,6 @@ from typing import Any
 
 from guard import Decision, Guard, GuardResult, ToolCall
 from guard.detectors.dlp import DLPDetector
-
 from sentinel_mcp.runtime_mode import is_off, is_passive
 
 

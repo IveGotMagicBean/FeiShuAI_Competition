@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sentinel_mcp import lark_notifier as ln
 
-
 # ------------------------------------------------------------------ #
 # 配置持久化
 # ------------------------------------------------------------------ #
@@ -43,7 +42,7 @@ def test_save_then_load_roundtrip():
 
 
 def test_save_chmods_to_600():
-    import os, stat
+    import os
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "cfg.json"
         ln.save_config(ln.LarkConfig("a", "b"), p)
@@ -176,7 +175,11 @@ def test_signature_validates_when_encrypt_key_set():
 
 def test_decrypt_payload_roundtrip():
     """对照飞书的加密协议 (AES-256-CBC + sha256(key) + IV-prefix + PKCS7)，自己加密解密一遍。"""
-    import hashlib, json as _json, os, base64
+    import base64
+    import hashlib
+    import json as _json
+    import os
+
     from cryptography.hazmat.primitives import padding
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -202,7 +205,11 @@ def test_maybe_decrypt_passthrough_when_not_encrypted():
 
 
 def test_maybe_decrypt_decrypts_when_encrypt_field_present():
-    import hashlib, json as _json, os, base64
+    import base64
+    import hashlib
+    import json as _json
+    import os
+
     from cryptography.hazmat.primitives import padding
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -227,7 +234,7 @@ def test_url_challenge_rejects_wrong_token():
     cfg = ln.LarkConfig("a", "b", verification_token="correct_token")
     try:
         ln.verify_url_challenge({"type": "url_verification", "challenge": "x", "token": "wrong"}, cfg)
-        assert False, "应抛 ValueError"
+        raise AssertionError("应抛 ValueError")
     except ValueError:
         pass
 
@@ -283,7 +290,7 @@ def test_notifier_send_pending_raises_on_sdk_failure():
 
         try:
             notifier.send_pending({"id": "p", "tool_name": "t", "args": {}, "risk_score": 0, "reason": ""})
-            assert False, "应抛 RuntimeError"
+            raise AssertionError("应抛 RuntimeError")
         except RuntimeError as e:
             assert "99991" in str(e)
 
@@ -301,7 +308,7 @@ def test_notifier_requires_target():
         notifier = ln.LarkNotifier(cfg)
         try:
             notifier.send_pending({"id": "p", "tool_name": "t", "args": {}, "risk_score": 0, "reason": ""})
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "target_chat_id" in str(e)
 
@@ -310,7 +317,7 @@ def test_notifier_raises_when_sdk_missing():
     with patch.object(ln, "_LARK_AVAILABLE", False):
         try:
             ln.LarkNotifier(ln.LarkConfig("a", "b"))
-            assert False, "应抛 LarkNotifierUnavailable"
+            raise AssertionError("应抛 LarkNotifierUnavailable")
         except ln.LarkNotifierUnavailable:
             pass
 

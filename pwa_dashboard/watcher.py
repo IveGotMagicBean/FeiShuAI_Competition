@@ -14,14 +14,11 @@
 
 from __future__ import annotations
 
-import json
 import threading
 import time
-from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 from pwa_dashboard import discovery
-
 
 _HAS_WATCHDOG = False
 try:

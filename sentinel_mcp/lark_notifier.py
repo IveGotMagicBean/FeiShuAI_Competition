@@ -258,8 +258,8 @@ class LarkNotifier:
         REST，自己写更可控）。如果连不通 / 鉴权失败 → 返回 [] 让前端降级到
         手输 chat_id。
         """
-        import urllib.request
         import urllib.error
+        import urllib.request
 
         # 1) 拿 tenant_access_token
         try:
@@ -344,6 +344,7 @@ class LarkNotifier:
 def decrypt_payload(encrypted_b64: str, encrypt_key: str) -> dict[str, Any]:
     """飞书 AES 解密：key = sha256(encrypt_key)，IV = 密文前 16 字节，模式 CBC + PKCS7。"""
     from base64 import b64decode
+
     from cryptography.hazmat.primitives import padding
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 

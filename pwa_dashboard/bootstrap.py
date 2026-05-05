@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import sys
 from pathlib import Path
 
 SHIM_DIR = Path.home() / ".local" / "bin"
@@ -121,8 +120,8 @@ def ensure_shim(force: bool = False, log=print) -> dict:
     }
     if not in_path:
         result["warning"] = (
-            f"~/.local/bin 不在 $PATH 里。请加一行到 ~/.bashrc 或 ~/.zshrc："
-            f' export PATH="$HOME/.local/bin:$PATH"'
+            "~/.local/bin 不在 $PATH 里。请加一行到 ~/.bashrc 或 ~/.zshrc："
+            ' export PATH="$HOME/.local/bin:$PATH"'
         )
     log(f"[bootstrap] shim {action} → {result['target']}  (source={source}, in_path={in_path})")
     return result

@@ -25,12 +25,10 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import time
 from pathlib import Path
 from typing import Any
-
 
 CLAUDE_SETTINGS_PATHS = {
     "darwin": Path.home() / ".claude" / "settings.json",

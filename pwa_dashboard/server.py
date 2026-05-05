@@ -24,6 +24,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
@@ -239,7 +240,7 @@ def api_integrations_preview(payload: dict):
             upstream_env=payload.get("upstream_env") or None,
         )
     except (KeyError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/integrations/install")
@@ -255,7 +256,7 @@ def api_integrations_install(payload: dict):
             overwrite=bool(payload.get("overwrite", False)),
         )
     except (KeyError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ---- Discovery：全机扫描 + 一键截关 -------------------------------------
@@ -321,7 +322,7 @@ def api_discovery_restore(payload: dict):
     try:
         return discovery.restore_backup(backup_path)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ---- 运行时模式（active / passive / off） -----------------------------
@@ -344,7 +345,7 @@ def api_mode_set(payload: dict):
     try:
         path = runtime_mode.write_mode(mode)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True, "mode": mode, "saved_to": str(path)}
 
 
@@ -368,7 +369,7 @@ def api_auto_decisions_add(payload: dict):
             by=(payload or {}).get("by", "dashboard"),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True, "rule": rule}
 
 
@@ -481,7 +482,7 @@ def api_webhooks_add(payload: dict):
             enabled=bool((payload or {}).get("enabled", True)),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True, "endpoint": ep}
 
 
@@ -523,7 +524,7 @@ def api_hooks_install(payload: dict | None = None):
     try:
         return hooks_installer.install(matcher=matcher)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/hooks/uninstall")
@@ -531,7 +532,7 @@ def api_hooks_uninstall():
     try:
         return hooks_installer.uninstall()
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ---- 拦截强度（5 档预设 + 自定义） ----------------------------------
@@ -550,7 +551,7 @@ def api_strength_set_level(payload: dict):
     try:
         path = _strength.write_level(lvl)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True, "level": lvl, "saved_to": str(path)}
 
 
@@ -563,7 +564,7 @@ def api_strength_custom_override(payload: dict):
             value=(payload or {}).get("value"),
         )
     except (KeyError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True}
 
 
@@ -673,7 +674,7 @@ def api_lark_test(payload: dict | None = None):
         msg_id = notifier.send_test(text)
         return {"ok": True, "message_id": msg_id}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/lark/callback")
@@ -689,19 +690,19 @@ async def api_lark_callback(request: Request):
     try:
         outer = json.loads(body)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="invalid json")
+        raise HTTPException(status_code=400, detail="invalid json") from None
 
     # 1) 如果 Encrypt Key 配了，飞书会把所有 payload（含 url_verification 握手）AES 加密
     try:
         payload = larkn.maybe_decrypt(outer, cfg)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     # 2) URL 验证握手（解密后才能拿到 challenge / token）
     try:
         challenge = larkn.verify_url_challenge(payload, cfg)
     except ValueError as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=401, detail=str(e)) from e
     if challenge is not None:
         return challenge
 
@@ -865,11 +866,12 @@ async def events_stream(request: Request, since_seconds: int = 0):
 
 # ---- Phase 2 / 3 新端点：cloudflared / lark chat 列表 / digest / auth ----
 
-from pwa_dashboard import cloudflared as _cf  # noqa: E402
-from pwa_dashboard import auth as _auth  # noqa: E402
-from pwa_dashboard import lark_digest as _digest  # noqa: E402
+from fastapi.responses import HTMLResponse, Response  # noqa: E402
 from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
-from fastapi.responses import Response, HTMLResponse  # noqa: E402
+
+from pwa_dashboard import auth as _auth  # noqa: E402
+from pwa_dashboard import cloudflared as _cf  # noqa: E402
+from pwa_dashboard import lark_digest as _digest  # noqa: E402
 
 
 # 鉴权 middleware（本机不挡，公网走 token）

@@ -65,13 +65,13 @@ def test_write_invalid_mode_raises():
         p = Path(td) / "mode.json"
         try:
             rm.write_mode("dangermode", p)  # type: ignore[arg-type]
-            assert False, "应抛 ValueError"
+            raise AssertionError("应抛 ValueError")
         except ValueError as e:
             assert "未知 mode" in str(e)
 
 
 def test_chmod_to_600():
-    import os, stat
+    import os
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "mode.json"
         rm.write_mode("passive", p)

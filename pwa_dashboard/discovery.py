@@ -22,10 +22,10 @@ import os
 import shutil
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable
-
+from typing import Any
 
 # ---------------------------------------------------------------- #
 # 数据类型

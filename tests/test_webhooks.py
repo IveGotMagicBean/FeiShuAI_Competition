@@ -48,7 +48,7 @@ def test_invalid_kind_raises():
         p = Path(td) / "wh.json"
         try:
             wh.add_endpoint("x", "telegram", "https://x", path=p)  # type: ignore[arg-type]
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "kind 必须是" in str(e)
 
@@ -58,7 +58,7 @@ def test_invalid_url_raises():
         p = Path(td) / "wh.json"
         try:
             wh.add_endpoint("x", "slack", "ftp://oops", path=p)
-            assert False
+            raise AssertionError()
         except ValueError as e:
             assert "http" in str(e)
 

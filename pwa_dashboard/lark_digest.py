@@ -20,8 +20,7 @@ from __future__ import annotations
 import json
 import os
 import threading
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -94,7 +93,7 @@ def build_digest_card(stats: dict[str, Any]) -> dict:
     return {
         "config": {"wide_screen_mode": True},
         "header": {
-            "title": {"tag": "plain_text", "content": f"📅 今日 AI 工具调用日报"},
+            "title": {"tag": "plain_text", "content": "📅 今日 AI 工具调用日报"},
             "template": "blue" if denied == 0 and high_risk == 0 else ("orange" if denied > 0 else "red"),
         },
         "elements": elements,
@@ -207,8 +206,8 @@ class DigestScheduler:
         stats = compute_today_stats(self.audit_db_path)
         # 加 mode + auto_rules
         try:
-            from sentinel_mcp.runtime_mode import read_mode
             from sentinel_mcp.auto_decisions import list_rules
+            from sentinel_mcp.runtime_mode import read_mode
             stats["mode"] = read_mode()
             stats["auto_rules_count"] = len(list_rules())
         except Exception:

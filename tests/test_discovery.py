@@ -14,16 +14,13 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pwa_dashboard import discovery as d  # noqa: E402
-
 
 # ---------------------------------------------------------------- #
 # helpers
@@ -386,7 +383,7 @@ def test_restore_backup_rejects_non_sentinel_files():
         bogus.write_text("{}")
         try:
             d.restore_backup(str(bogus))
-            assert False, "应抛 ValueError"
+            raise AssertionError("应抛 ValueError")
         except ValueError as e:
             assert "非 sentinel 备份文件" in str(e)
 
