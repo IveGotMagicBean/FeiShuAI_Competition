@@ -48,6 +48,45 @@ def _read_hook_input() -> dict:
         return {}
 
 
+# Claude Code 内置工具名 → policy.yaml 里 tools 节定义的工具名
+# 不在表里的（Glob, Grep, TodoWrite, NotebookEdit）默认走 shell_exec / write_file 兜底，
+# 或保持原名（policy 不认识就用空 policy 走默认 ALLOW）
+_TOOL_NAME_MAP = {
+    "Bash": "shell_exec",
+    "Write": "write_file",
+    "Edit": "write_file",
+    "MultiEdit": "write_file",
+    "Read": "read_file",
+    "Glob": "list_dir",
+    "Grep": "read_file",
+    "WebFetch": "http_request",
+    "WebSearch": "http_request",
+    "NotebookEdit": "write_file",
+}
+
+
+def _translate_tool(tool_name: str, tool_input: dict) -> tuple[str, dict]:
+    """把 Claude Code hook 传的 tool_name + input 翻译成 policy 能识别的形态。
+
+    映射后 args 字段名也尽量贴 policy 习惯：
+      Bash:   {command, description}        → shell_exec: {command, description}
+      Write:  {file_path, content}          → write_file: {path, content}
+      Edit:   {file_path, old_string, ...}  → write_file: {path, old, new}
+      Read:   {file_path, offset, limit}    → read_file:  {path}
+      WebFetch: {url, prompt}               → http_request: {url, method:'GET'}
+    """
+    mapped = _TOOL_NAME_MAP.get(tool_name, tool_name)
+    args = dict(tool_input or {})
+
+    # 字段名标准化（policy 沙箱按 path / command / url 找）
+    if "file_path" in args and "path" not in args:
+        args["path"] = args["file_path"]
+    if mapped == "http_request" and "url" in args:
+        args.setdefault("method", "GET")
+
+    return mapped, args
+
+
 def _emit_block(reason: str, *, structured: bool = False) -> int:
     """发出阻止信号。Claude Code 期望 exit code 2 + stderr。"""
     if structured:
@@ -80,9 +119,12 @@ def run_hook_check(
         # 输入为空 → 默认允许（防止 hook 配错把 Claude 卡死）
         return _emit_allow("(empty hook input)")
 
-    tool_name = payload.get("tool_name") or "<unknown>"
-    tool_input = payload.get("tool_input") or {}
+    raw_tool_name = payload.get("tool_name") or "<unknown>"
+    raw_tool_input = payload.get("tool_input") or {}
     session_id = payload.get("session_id") or "default"
+
+    # 把 Claude Code 内置工具名（Bash/Write/...）翻译成 policy 识别的工具名
+    tool_name, tool_input = _translate_tool(raw_tool_name, raw_tool_input)
 
     # off 模式：完全透明，连 audit 都不写
     if is_off():
