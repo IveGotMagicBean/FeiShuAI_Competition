@@ -1,6 +1,6 @@
 [package]
 name = "sentinel-mcp-desktop"
-version = "0.2.0"
+version = "0.3.0"
 description = "Sentinel-MCP desktop shell"
 authors = ["Sentinel team"]
 edition = "2021"

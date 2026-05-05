@@ -44,7 +44,7 @@ HERE = Path(__file__).resolve().parent
 TEMPLATES_DIR = HERE / "templates"
 STATIC_DIR = HERE / "static"
 
-app = FastAPI(title="Sentinel-MCP Dashboard", version="0.2.0-dev")
+app = FastAPI(title="Sentinel-MCP Dashboard", version="0.3.0")
 
 # 审计 DB：默认 0427_test01/data/sentinel.db（与 sentinel-mcp wrap 共用），
 # 环境变量 SENTINEL_DB 覆盖。沿用旧的 0425_test01/data/audit.db 也行，但
@@ -115,7 +115,7 @@ def index(request: Request):
 
 @app.get("/api/health")
 def api_health():
-    return {"status": "ok", "db": DB_PATH, "version": "0.2.0-dev", "pwa": True}
+    return {"status": "ok", "db": DB_PATH, "version": "0.3.0", "pwa": True}
 
 
 @app.get("/api/events")
@@ -770,7 +770,7 @@ async def _sse_event_generator(start_ts: float):
 
     # 起手发一次 hello + 最近 50 条历史 + 当前所有 pending，让前端能立刻填满
     backlog = audit.query(limit=50)
-    yield _sse_pack("hello", {"db": DB_PATH, "version": "0.2.0-dev"})
+    yield _sse_pack("hello", {"db": DB_PATH, "version": "0.3.0"})
     for evt in reversed(backlog):
         yield _sse_pack("event", evt)
         cursor = max(cursor, float(evt.get("timestamp", 0)))

@@ -4,5 +4,5 @@ REDACT 改写参数后下发；ALLOW 透传。"""
 
 from sentinel_mcp.proxy import MCPProxy
 
-__version__ = "0.2.0-dev"
+__version__ = "0.3.0"
 __all__ = ["MCPProxy", "__version__"]
