@@ -635,13 +635,20 @@ _refresh_lark_notifier()
 
 @app.get("/api/lark/status")
 def api_lark_status():
-    """返回飞书集成状态：SDK 是否装、config 是否存在、target 是否配。"""
+    """返回飞书集成状态：SDK 是否装、config 是否存在、target 是否配。
+
+    出于本地优先理念，dashboard 只 listen 127.0.0.1（除非用户主动暴露 cloudflared），
+    所以回 encrypt_key / verification_token 明文给前端是 OK 的，方便用户改一次后回填。
+    app_secret 仍 mask 处理，因为它就算用户也不应直接看（避免肩窥）。
+    """
     cfg = larkn.load_config()
     return {
         "sdk_available": larkn._LARK_AVAILABLE,
         "config_exists": cfg is not None,
         "app_id": cfg.app_id if cfg else "",
         "target_chat_id": cfg.target_chat_id if cfg else "",
+        "encrypt_key": cfg.encrypt_key if cfg else "",
+        "verification_token": cfg.verification_token if cfg else "",
         "has_secret": bool(cfg.app_secret) if cfg else False,
         "has_encrypt_key": bool(cfg.encrypt_key) if cfg else False,
         "notifier_active": _lark_state["notifier"] is not None,

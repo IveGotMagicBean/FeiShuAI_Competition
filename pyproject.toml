@@ -39,6 +39,7 @@ dashboard = [
     "pydantic>=2.5",
     "pywebpush>=2.0",
     "cryptography>=42",
+    "lark-oapi>=1.4",       # 飞书集成（消息卡片、callback 解密）
 ]
 dev = [
     "pytest>=8.0",

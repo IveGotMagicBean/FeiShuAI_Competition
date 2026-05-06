@@ -1330,8 +1330,13 @@
                 </div>
 
                 <div>
-                  <label>Encrypt Key <span style="font-weight:400;color:var(--text-4);">(可选 — 加密事件订阅)</span></label>
-                  <input x-model="larkForm.encrypt_key" class="input mono">
+                  <label>Encrypt Key <span style="font-weight:400;color:var(--text-4);">(飞书后台「事件配置」→ 加密策略)</span></label>
+                  <input x-model="larkForm.encrypt_key" class="input mono" placeholder="32 字符，决定 AES 解密的密钥">
+                </div>
+
+                <div>
+                  <label>Verification Token <span style="font-weight:400;color:var(--text-4);">(同 Encrypt Key 一起生成，用于验证请求)</span></label>
+                  <input x-model="larkForm.verification_token" class="input mono" placeholder="飞书后台和 Encrypt Key 一起生成的另一串">
                 </div>
 
                 <div style="font-size:11px;color:var(--text-3);background:var(--surface-2);padding:8px 10px;border-radius:6px;">
@@ -2262,7 +2267,7 @@
 
         // 飞书
         lark: { sdk_available: false, config_exists: false, notifier_active: false, app_id: '', target_chat_id: '', has_secret: false, has_encrypt_key: false, config_path: '' },
-        larkForm: { app_id: '', app_secret: '', target_chat_id: '', encrypt_key: '' },
+        larkForm: { app_id: '', app_secret: '', target_chat_id: '', encrypt_key: '', verification_token: '' },
         larkBusy: false, larkMessage: '', larkSuccess: false,
         larkChats: [], larkChatsBusy: false, larkChatsError: '',
         async loadLarkChats() {
@@ -2370,6 +2375,8 @@
             this.lark = j;
             this.larkForm.app_id = j.app_id || '';
             this.larkForm.target_chat_id = j.target_chat_id || '';
+            this.larkForm.encrypt_key = j.encrypt_key || '';
+            this.larkForm.verification_token = j.verification_token || '';
           } catch (_) {}
         },
         async saveLarkConfig() {
