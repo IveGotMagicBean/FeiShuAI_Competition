@@ -1,0 +1,29 @@
+# Sentinel-MCP · Cloudflare Worker (Workers + Static Assets 模式)
+# ==============================================================
+#
+# 部署：Cloudflare 控制台连了这个 GitHub repo，每次 push 到 main 自动跑
+#       `npx wrangler deploy`（已在 Cloudflare UI 中配置）
+#
+# Bindings：
+#   PAIR_KV  - KV namespace，配对码/事件/审批/决策的存储
+#   ASSETS   - 静态资源 binding，serve website/ 下的文件
+
+name = "sentinel-mcp"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ---- 静态资源 ----
+# website/ 下的所有文件作为静态资源 serve
+# 任何不匹配 /api/* 的请求都会落到这里
+[assets]
+directory = "./website"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+# ---- KV namespace ----
+# 注意：id 必须填在 Cloudflare 控制台创建的 PAIR_KV namespace 的真实 ID
+# 在 Cloudflare → Storage & Databases → KV → 找到 sentinel-pair → 复制 "Namespace ID"
+[[kv_namespaces]]
+binding = "PAIR_KV"
+id = "e1286976295e47a1875427b113afe3bd"
