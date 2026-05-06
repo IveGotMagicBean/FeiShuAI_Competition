@@ -37,7 +37,7 @@ from typing import Any
 
 log = logging.getLogger("sentinel_mcp.cloud_relay")
 
-DEFAULT_CLOUD_BASE = "http://sentinelmcp.top:8080"
+DEFAULT_CLOUD_BASE = "http://sentinelmcp.top:8765"
 DEFAULT_INSTANCE_PATH = Path.home() / ".config" / "sentinel-mcp" / "instance.json"
 
 EVENT_POLL_INTERVAL = 1.0

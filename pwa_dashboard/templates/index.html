@@ -1168,7 +1168,7 @@
                 <template x-if="!cloudStatus.enabled">
                   <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
                     cloud_relay 未启动 — 默认会自启，如果显示「未连接」请：<br>
-                    1. 检查能否访问 <code x-text="cloudStatus.cloud_base || 'sentinelmcp.top:8080'"></code>（本机要能访问）<br>
+                    1. 检查能否访问 <code x-text="cloudStatus.cloud_base || 'sentinelmcp.top:8765'"></code>（本机要能访问）<br>
                     2. 设环境变量 <code>SENTINEL_CLOUD_RELAY=1</code> 重启 dashboard<br>
                     3. Cloudflare 后台检查 PAIR_KV namespace 是否绑定（部署者首次需配）
                   </p>
