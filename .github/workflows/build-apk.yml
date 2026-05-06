@@ -120,32 +120,37 @@ jobs:
             -re {Do you accept.*[Ll]icense}                { send -- "Y\r"; exp_continue }
             -re {[Aa]ccept.*license}                       { send -- "Y\r"; exp_continue }
 
-            # ---- manifest 相关 ----
-            -re {[Aa]pplication ID}              { send -- "dev.sentinelmcp.twa\r"; exp_continue }
-            -re {[Ss]tarting version code}       { send -- "3\r"; exp_continue }
+            # ---- 关键：keystore 路径 + alias + 密码必须精确，否则签名错 ----
             -re {[Pp]ath to.*[Kk]eystore}        { send -- "./android.keystore\r"; exp_continue }
             -re {[Kk]ey alias}                   { send -- "android\r"; exp_continue }
             -re {[Kk]eystore.*password}          { send -- "$kpw\r"; exp_continue }
             -re {[Kk]ey password}                { send -- "$keypw\r"; exp_continue }
-            -re {[Uu]se existing.*signing key}   { send -- "Y\r"; exp_continue }
-            -re {[Gg]enerate.*new signing key}   { send -- "N\r"; exp_continue }
-            -re {[Pp]ush [Dd]elegation}          { send -- "Y\r"; exp_continue }
-            -re {[Ss]kip PWA [Qq]uality}         { send -- "Y\r"; exp_continue }
-            -re {Domain being opened}            { send -- "\r"; exp_continue }
+            -re {[Pp]assword for the.*[Kk]ey}    { send -- "$keypw\r"; exp_continue }
+
+            # ---- 其他所有 prompt 都按默认值回车 ----
+            # 重要：不能给 application id / name 等填字符串值，因为 bubblewrap 会先打
+            # 一段帮助说明文字（里面有 "Application ID:" 字样），expect 会抢跑发字符
+            # 把后续 prompt 给污染掉。Init 之后用 twa-manifest.json.template 覆盖 manifest 即可。
+            -re {Application name:}              { send -- "\r"; exp_continue }
+            -re {Short name:}                    { send -- "\r"; exp_continue }
+            -re {Application ID:}                { send -- "\r"; exp_continue }
+            -re {[Ss]tarting version code:}      { send -- "\r"; exp_continue }
             -re {Domain:}                        { send -- "\r"; exp_continue }
-            -re {[Uu]rl path}                    { send -- "\r"; exp_continue }
-            -re {URL path}                       { send -- "\r"; exp_continue }
-            -re {Name of the application}        { send -- "\r"; exp_continue }
-            -re {launcher}                       { send -- "\r"; exp_continue }
-            -re {[Tt]heme color}                 { send -- "\r"; exp_continue }
-            -re {[Bb]ackground color}            { send -- "\r"; exp_continue }
-            -re {Display mode}                   { send -- "\r"; exp_continue }
-            -re {Orientation}                    { send -- "\r"; exp_continue }
-            -re {Status bar color}               { send -- "\r"; exp_continue }
-            -re {[Ss]plash screen color}         { send -- "\r"; exp_continue }
-            -re {Icon URL}                       { send -- "\r"; exp_continue }
-            -re {Maskable icon}                  { send -- "\r"; exp_continue }
-            -re {Monochrome icon}                { send -- "\r"; exp_continue }
+            -re {URL path:}                      { send -- "\r"; exp_continue }
+            -re {Display mode:}                  { send -- "\r"; exp_continue }
+            -re {Status bar color:}              { send -- "\r"; exp_continue }
+            -re {[Ss]plash screen color:}        { send -- "\r"; exp_continue }
+            -re {[Bb]ackground color:}           { send -- "\r"; exp_continue }
+            -re {[Tt]heme color:}                { send -- "\r"; exp_continue }
+            -re {Icon URL:}                      { send -- "\r"; exp_continue }
+            -re {[Mm]askable icon URL:}          { send -- "\r"; exp_continue }
+            -re {[Mm]onochrome icon URL:}        { send -- "\r"; exp_continue }
+            -re {Orientation:}                   { send -- "\r"; exp_continue }
+            -re {[Ll]anguage:}                   { send -- "\r"; exp_continue }
+            -re {[Ss]igner.*name:}               { send -- "\r"; exp_continue }
+            -re {[Oo]rganizational [Uu]nit:}     { send -- "\r"; exp_continue }
+            -re {[Oo]rganization:}               { send -- "\r"; exp_continue }
+            -re {[Cc]ountry:}                    { send -- "\r"; exp_continue }
 
             # ---- catch-all：碰到没识别的 (Y/n) / (y/N) 默认走推荐选项 ----
             -re {\(Y/n\)}                        { send -- "Y\r"; exp_continue }
