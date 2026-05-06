@@ -1503,22 +1503,22 @@ footer a:hover{color:var(--accent);}
     </button>
   </div>
   <div class="modal-body" style="text-align:left;padding:1.5rem 1.5rem 1.75rem;">
-    <p style="text-align:center;font-size:.85rem;color:var(--ink2);margin-bottom:1.1rem;">不想下载 GUI ？一行 pip 装上，立刻把任意 MCP server 包进 Sentinel。</p>
+    <p style="text-align:center;font-size:.85rem;color:var(--ink2);margin-bottom:1.1rem;">不想下载 GUI？三行命令装好整套（含 dashboard），立刻可用。</p>
     <div style="display:flex;flex-direction:column;gap:.75rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
-        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>pip install sentinel-mcp</code>
-        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'pip install sentinel-mcp')">复制</button>
+        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>python3 -m venv ~/sentinel-app &amp;&amp; source ~/sentinel-app/bin/activate</code>
+        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'python3 -m venv ~/sentinel-app && source ~/sentinel-app/bin/activate')">复制</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
+        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 'sentinel-mcp[dashboard] @ git+https://github.com/IveGotMagicBean/FeiShuAI_Competition.git'</code>
+        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, &quot;pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 'sentinel-mcp[dashboard] @ git+https://github.com/IveGotMagicBean/FeiShuAI_Competition.git'&quot;)">复制</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
         <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>sentinel-mcp-desktop</code>
         <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'sentinel-mcp-desktop')">复制</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
-        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp</code>
-        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp')">复制</button>
-      </div>
     </div>
-    <div class="modal-hint" style="text-align:center;margin-top:1rem;">第 3 步把任意 MCP server 包进 Sentinel 代理，全程审计 + 拦截高危调用</div>
+    <div class="modal-hint" style="text-align:center;margin-top:1rem;">装好后浏览器开 <code>http://localhost:8766</code> 就是完整 dashboard</div>
   </div>
 </div>
 
