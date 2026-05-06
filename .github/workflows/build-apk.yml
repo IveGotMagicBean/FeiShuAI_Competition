@@ -29,6 +29,12 @@ permissions:
   contents: write     # 上传 release asset
   issues: write       # 失败时自动开 debug issue
 
+# 新 push 会自动取消同 ref 上还在跑的 build —— 否则旧 run 卡死会一直跑到 60min job timeout
+# 触发 GitHub 强杀，后续 dump log/开 issue 的 step 都不会执行
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Bubblewrap TWA build
@@ -170,8 +176,14 @@ jobs:
           EXPECT_EOF
           chmod +x /tmp/init.exp
           # 失败也不立刻退，先把 session log dump 出来再 exit
-          /tmp/init.exp
+          # 用 timeout 命令兜底：expect 自身的 timeout 在 gradle 持续输出时不会触发，
+          # 必须用外层 wallclock 25min 强制结束，否则会跑到 job 60min timeout 被 GitHub 强杀，
+          # 后续 dump log / 开 issue 的 step 都不会执行
+          timeout --kill-after=30 1500 /tmp/init.exp
           rc=$?
+          if [ $rc -eq 124 ]; then
+            echo "::warning::init step 25min wallclock timeout（GNU timeout 触发），强制结束"
+          fi
           if [ $rc -ne 0 ]; then
             echo ""
             echo "============================================"
