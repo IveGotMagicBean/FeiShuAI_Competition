@@ -37,7 +37,7 @@ html.dark{
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
   --shadow-lg:0 8px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.3);
 }
-@media(prefers-color-scheme:dark){:root:not(.light){--bg:#0a0a14;--bg2:#13131e;--surface:#1a1a26;--surface2:#21212e;--ink:#e4e4ed;--ink2:#9ca3af;--ink3:#6b7280;--accent:#818cf8;--accent2:#a5b4fc;--accent-light:#1e1b4b;--accent-mid:#312e81;--border:#2a2a38;--border2:#3a3a48;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);--shadow-lg:0 8px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.3);}}
+/* 默认全亮色；只有用户手动点切换按钮加上 .dark class 才进入暗色（不再读系统 prefers-color-scheme） */
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -63,7 +63,6 @@ html.dark nav{background:rgba(10,10,20,.85);}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
 .icon-btn svg{width:14px;height:14px;}
 .sun{display:none;}html.dark .sun{display:block;}html.dark .moon{display:none;}
-@media(prefers-color-scheme:dark){html:not(.light):not(.dark) .sun{display:block;}html:not(.light):not(.dark) .moon{display:none;}}
 
 /* ============ HERO ============ */
 .hero{max-width:1100px;margin:0 auto;padding:6rem 2.5rem 4rem;display:grid;grid-template-columns:1.1fr 1fr;gap:4rem;align-items:center;}
