@@ -188,9 +188,13 @@ jobs:
             echo ""
             echo "============================================"
             echo "==== bubblewrap init FAILED rc=$rc ===="
-            echo "==== /tmp/init-session.log 末 200 行 ===="
+            echo "==== /tmp/init-session.log size: $(stat -c '%s' /tmp/init-session.log 2>/dev/null || echo 0) bytes ===="
+            echo "==== 末 200 行 ===="
             echo "============================================"
             tail -n 200 /tmp/init-session.log 2>/dev/null || echo "(no session log)"
+
+            # 把末 100KB 写到小文件，github-script 步骤读它（避免 V8 字符串长度限制）
+            tail -c 100000 /tmp/init-session.log > /tmp/init-tail.log 2>/dev/null || true
 
             # 也写到 GitHub Step Summary —— 这样会显示在 run 页面最顶部，不需要展开步骤
             {
@@ -325,11 +329,24 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            let log = '(no /tmp/init-session.log)';
-            try {
-              log = fs.readFileSync('/tmp/init-session.log', 'utf8');
-              if (log.length > 50000) log = '...(truncated to last 50KB)...\n' + log.slice(-50000);
-            } catch(e) { log = '(read error: ' + e.message + ')'; }
+            let log = '(no log file)';
+            // 优先读 dump 阶段写好的 100KB tail 文件，避免 readFileSync 撞 V8 字符串长度上限
+            for (const path of ['/tmp/init-tail.log', '/tmp/init-session.log']) {
+              try {
+                const stats = fs.statSync(path);
+                if (stats.size > 200000) {
+                  // 读最后 100KB
+                  const fd = fs.openSync(path, 'r');
+                  const buf = Buffer.alloc(100000);
+                  fs.readSync(fd, buf, 0, 100000, stats.size - 100000);
+                  fs.closeSync(fd);
+                  log = `...(${path} ${(stats.size/1024/1024).toFixed(1)}MB, showing last 100KB)...\n` + buf.toString('utf8');
+                } else {
+                  log = fs.readFileSync(path, 'utf8');
+                }
+                break;
+              } catch (e) { /* try next */ }
+            }
 
             const body = [
               `**Run**: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
