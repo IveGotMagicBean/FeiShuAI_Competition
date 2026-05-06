@@ -12,6 +12,12 @@ name: Build TWA APK
 on:
   push:
     tags: ['v*']
+    # 改动 mobile 资产或本 workflow 自身时也自动重 build（避免要等下个 release tag）
+    branches: ['main']
+    paths:
+      - '.github/workflows/build-apk.yml'
+      - 'mobile/**'
+      - 'website/manifest.webmanifest'
   workflow_dispatch:
     inputs:
       release_tag:
