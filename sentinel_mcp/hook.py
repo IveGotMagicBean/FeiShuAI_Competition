@@ -168,7 +168,7 @@ def run_hook_check(
     def _hook_ask(call, pending) -> bool:
         # 创建 pending 让用户在 dashboard 看到
         try:
-            approvals.create(
+            pid = approvals.create(
                 tool_name=call.tool_name,
                 args=call.args,
                 reason=pending.reason,
@@ -176,9 +176,26 @@ def run_hook_check(
                 triggered=list(pending.triggered_rules or []) + ["source:claude-code-hook"],
                 session_id=session_id,
             )
-        except Exception:
-            pass
-        # hook 不能等：直接当拒绝。提示用户去 dashboard 重试
+        except Exception as e:
+            print(f"[sentinel-hook] create pending failed: {e}", file=sys.stderr)
+            return False
+
+        # 等用户在 dashboard 点同意/拒绝（最多 30s）
+        # Claude Code hook 默认超时 60s，留 30s buffer。环境变量 SENTINEL_HOOK_WAIT 可调。
+        wait_seconds = float(os.environ.get("SENTINEL_HOOK_WAIT", "30"))
+        print(f"[sentinel-hook] 等审批中... 去 dashboard 待审批 tab 点同意/拒绝（{wait_seconds:.0f}s 内）", file=sys.stderr)
+        try:
+            result = approvals.wait(pid, timeout=wait_seconds)
+        except Exception as e:
+            print(f"[sentinel-hook] wait failed: {e}", file=sys.stderr)
+            return False
+
+        if result is True:
+            return True
+        if result is False:
+            return False
+        # None = 超时
+        print(f"[sentinel-hook] 审批超时 ({wait_seconds:.0f}s)，按拒绝处理。去 dashboard 同意后让 Claude 重试", file=sys.stderr)
         return False
 
     try:
