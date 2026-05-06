@@ -26,7 +26,7 @@ jobs:
   build:
     name: Bubblewrap TWA build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60   # 第一次跑会下 gradle deps / android build-tools，给足时间
 
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +40,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # 预装 Android SDK + build-tools，避免 bubblewrap 自己下 ~500MB
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-33 build-tools;33.0.2'
+
       - name: Install expect + bubblewrap CLI
         run: |
           sudo apt-get update -qq
@@ -47,6 +53,24 @@ jobs:
           npm install -g @bubblewrap/cli@latest
           which bubblewrap
           bubblewrap --version || true
+
+      # 关键：预创建 bubblewrap 配置，告诉它 JDK/SDK 在哪
+      # 这样 init 就不会问"要不要装 JDK"，省 5-10 分钟
+      - name: Pre-configure bubblewrap (skip JDK/SDK download prompts)
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json <<EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_SDK_ROOT"
+          }
+          EOF
+          echo '--- ~/.bubblewrap/config.json ---'
+          cat ~/.bubblewrap/config.json
+          echo '--- JAVA_HOME ---'
+          ls -la "$JAVA_HOME" | head -5
+          echo '--- ANDROID_SDK_ROOT ---'
+          ls -la "$ANDROID_SDK_ROOT" | head -10
 
       - name: Decode signing keystore from secret
         working-directory: mobile
@@ -70,18 +94,15 @@ jobs:
           cat > /tmp/init.exp <<'EXPECT_EOF'
           #!/usr/bin/expect -f
           log_user 1
-          # 1500s = 25min：bubblewrap 第一次跑要下 JDK (~200MB) + Android SDK (~500MB)
-          set timeout 1500
+          # 600s = 10min：JDK/SDK 已预装，init 主要是回答 manifest 配置问题 + 生成 gradle 项目
+          set timeout 600
           set kpw $env(KEYSTORE_PASSWORD)
           set keypw $env(KEY_PASSWORD)
 
           spawn -noecho bubblewrap init --manifest=https://sentinel-mcp.542058929.workers.dev/manifest.webmanifest
 
           expect {
-            # ---- Bubblewrap 自带的 JDK / Android SDK / SDK license 三连问 ----
-            # 都让它自己装；selfu-java + setup-android 装的不一定符合 bubblewrap 期待的版本/路径
-            -re {Bubblewrap to install the JDK}            { send -- "Y\r"; exp_continue }
-            -re {Bubblewrap to install the Android SDK}    { send -- "Y\r"; exp_continue }
+            # ---- Android SDK license 还可能弹（即使 SDK 路径已设置）----
             -re {Do you accept.*[Ll]icense}                { send -- "Y\r"; exp_continue }
             -re {[Aa]ccept.*license}                       { send -- "Y\r"; exp_continue }
 
