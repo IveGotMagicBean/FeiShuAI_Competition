@@ -141,8 +141,10 @@ jobs:
             -re {Short name:}                    { send -- "\r"; exp_continue }
             # Application ID 默认值是反转 host，但 host 含 '542058929' (数字开头段不是合法 Java
             # package segment)，bubblewrap 会拒绝 → 死循环。强制发合法的 packageId。
-            # [^(]*\( 区分真 prompt（带默认值括号）和帮助文字（不带）
-            -re {Application ID:[^(]*\(}         { send -- "dev.sentinelmcp.twa\r"; exp_continue }
+            # 用 .{0,80}\( 限制：必须 80 字符内同行就出现 '('（真 prompt 满足，
+            # 帮助文字 'Application ID: also known as Package Name, this is\n...(_)' 不满足，
+            # 因为 Tcl '.' 默认不跨 \n，第一行 'is' 后 EOL，没 ( ）
+            -re {Application ID:.{0,80}\(}       { send -- "dev.sentinelmcp.twa\r"; exp_continue }
             -re {[Ss]tarting version code:}      { send -- "\r"; exp_continue }
             -re {Domain:}                        { send -- "\r"; exp_continue }
             -re {URL path:}                      { send -- "\r"; exp_continue }
