@@ -710,12 +710,11 @@ footer a:hover{color:var(--accent);}
     Sentinel-MCP
   </a>
   <ul class="nav-links">
-    <li><a href="#why">为什么</a></li>
-    <li><a href="#clients">支持客户端</a></li>
-    <li><a href="#features">核心能力</a></li>
     <li><a href="#download">下载</a></li>
-    <li><a href="#arch">架构</a></li>
-    <li><a href="#start">快速上手</a></li>
+    <li><a href="#why">痛点</a></li>
+    <li><a href="#clients">兼容</a></li>
+    <li><a href="#features">功能</a></li>
+    <li><a href="#arch">原理</a></li>
     <li><a href="#contact">联系</a></li>
   </ul>
   <div class="nav-r">
@@ -811,13 +810,18 @@ footer a:hover{color:var(--accent);}
       <div class="dl-ext">.apk</div>
       <div class="dl-size">移动端</div>
     </a>
-    <a class="dl-card" href="#start">
+    <a class="dl-card" href="#" onclick="openCliModal(); return false;">
       <div class="dl-icon">📦</div>
       <h4>Python CLI</h4>
       <div class="dl-ext">pip</div>
       <div class="dl-size">命令行</div>
     </a>
   </div>
+  <p style="text-align:center;margin-top:1.6rem;font-size:.85rem;color:var(--ink2);">
+    📚 <a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/tree/main/docs" target="_blank" style="color:var(--accent);">完整文档</a> ·
+    🎬 <a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/blob/main/docs/04b_DEMO_VERBATIM.md" target="_blank" style="color:var(--accent);">演示视频脚本</a> ·
+    📨 <a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/blob/main/docs/08_LARK_INTEGRATION.md" target="_blank" style="color:var(--accent);">飞书集成 SOP</a>
+  </p>
 </section>
 
 <hr class="divider">
@@ -1384,43 +1388,7 @@ footer a:hover{color:var(--accent);}
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- ============ 快速上手 ============ -->
-<section id="start" class="section">
-  <div class="reveal">
-    <div class="s-label">快速上手</div>
-    <h2 class="s-title">3 行命令，<em>立刻保护</em></h2>
-    <p class="s-desc" style="max-width:600px;">不想下载 GUI？一行 pip 装上，立刻把任意 MCP server 包进 Sentinel 代理。</p>
-  </div>
-
-  <div class="install-card reveal" style="transition-delay:.05s">
-    <div class="install-bar">
-      <div class="tdot r"></div><div class="tdot y"></div><div class="tdot g"></div>
-      <span class="arch-title">3 步上手</span>
-    </div>
-    <div class="install-body" style="flex-direction:column;align-items:stretch;gap:.85rem;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <code class="install-cmd"><span class="p">$</span>pip install sentinel-mcp</code>
-        <button class="cpbtn" onclick="cp(this, 'pip install sentinel-mcp')">复制</button>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <code class="install-cmd"><span class="p">$</span>sentinel-mcp-desktop</code>
-        <button class="cpbtn" onclick="cp(this, 'sentinel-mcp-desktop')">复制</button>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <code class="install-cmd"><span class="p">$</span>sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp</code>
-        <button class="cpbtn" onclick="cp(this, 'sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp')">复制</button>
-      </div>
-    </div>
-  </div>
-
-  <p style="text-align:center;margin-top:2rem;font-size:.88rem;color:var(--ink2);">
-    📚 完整文档：<a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/tree/main/docs" target="_blank" style="color:var(--accent);">docs/</a> ·
-    🎬 演示视频：<a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/blob/main/docs/04b_DEMO_VERBATIM.md" target="_blank" style="color:var(--accent);">5 分钟红蓝对抗</a> ·
-    📨 飞书集成：<a href="https://github.com/IveGotMagicBean/FeiShuAI_Competition/blob/main/docs/08_LARK_INTEGRATION.md" target="_blank" style="color:var(--accent);">SOP</a>
-  </p>
-</section>
+<!-- 旧 #start section 已删，命令改成弹窗（点 Python CLI 卡片触发），文档链接已挪到 download 区下面 -->
 
 <hr class="divider">
 
@@ -1519,6 +1487,38 @@ footer a:hover{color:var(--accent);}
       <button class="modal-copy-btn" id="modalCopyBtn" onclick="copyModalEmail()">复制</button>
     </div>
     <div class="modal-hint">点击「复制」即可粘贴到任何邮件客户端</div>
+  </div>
+</div>
+
+<!-- ============ CLI Modal（Python CLI 卡片点击弹出） ============ -->
+<div class="modal-overlay" id="cliOverlay" onclick="closeCliModal()"></div>
+<div class="modal-box" id="cliModal" style="max-width:560px;">
+  <div class="modal-head">
+    <div class="modal-head-title">
+      <span class="modal-head-dot"></span>
+      <span>Python CLI · 3 行命令上手</span>
+    </div>
+    <button class="modal-close" onclick="closeCliModal()" aria-label="关闭">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="modal-body" style="text-align:left;padding:1.5rem 1.5rem 1.75rem;">
+    <p style="text-align:center;font-size:.85rem;color:var(--ink2);margin-bottom:1.1rem;">不想下载 GUI ？一行 pip 装上，立刻把任意 MCP server 包进 Sentinel。</p>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
+        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>pip install sentinel-mcp</code>
+        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'pip install sentinel-mcp')">复制</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
+        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>sentinel-mcp-desktop</code>
+        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'sentinel-mcp-desktop')">复制</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;">
+        <code style="font-family:var(--mono);font-size:.78rem;color:var(--ink);overflow-x:auto;white-space:nowrap;flex:1;"><span style="color:var(--accent);">$ </span>sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp</code>
+        <button class="cpbtn" style="flex-shrink:0;" onclick="cp(this, 'sentinel-mcp wrap -- npx -y @modelcontextprotocol/server-filesystem /tmp')">复制</button>
+      </div>
+    </div>
+    <div class="modal-hint" style="text-align:center;margin-top:1rem;">第 3 步把任意 MCP server 包进 Sentinel 代理，全程审计 + 拦截高危调用</div>
   </div>
 </div>
 
@@ -1640,9 +1640,18 @@ footer a:hover{color:var(--accent);}
       setTimeout(()=> btn.innerHTML = orig, 2000);
     }).catch(()=>alert('复制失败，请手动复制：' + SENTINEL_EMAIL));
   }
+  // ============ CLI Modal ============
+  function openCliModal(){
+    document.getElementById('cliOverlay').classList.add('open');
+    document.getElementById('cliModal').classList.add('open');
+  }
+  function closeCliModal(){
+    document.getElementById('cliOverlay').classList.remove('open');
+    document.getElementById('cliModal').classList.remove('open');
+  }
   // ESC 关 modal
   document.addEventListener('keydown', e=>{
-    if(e.key === 'Escape') closeEmailModal();
+    if(e.key === 'Escape'){ closeEmailModal(); closeCliModal(); }
   });
 
   // reveal on scroll
