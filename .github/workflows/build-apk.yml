@@ -97,9 +97,16 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # 先跑 doctor 看看 bubblewrap 认不认我们预设的 JDK/SDK
+          echo '=== bubblewrap doctor (诊断 JDK/SDK 配置) ==='
+          bubblewrap doctor 2>&1 || echo "(doctor 报错，继续)"
+          echo '=== /end doctor ==='
+
           cat > /tmp/init.exp <<'EXPECT_EOF'
           #!/usr/bin/expect -f
           log_user 1
+          # 把整个 expect session dump 到文件，失败时方便定位
+          log_file -a /tmp/init-session.log
           # 600s = 10min：JDK/SDK 已预装，init 主要是回答 manifest 配置问题 + 生成 gradle 项目
           set timeout 600
           set kpw $env(KEYSTORE_PASSWORD)
@@ -151,7 +158,18 @@ jobs:
           exit $ec
           EXPECT_EOF
           chmod +x /tmp/init.exp
+          # 失败也不立刻退，先把 session log dump 出来再 exit
           /tmp/init.exp
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo ""
+            echo "============================================"
+            echo "==== bubblewrap init FAILED rc=$rc ===="
+            echo "==== /tmp/init-session.log 末 200 行 ===="
+            echo "============================================"
+            tail -n 200 /tmp/init-session.log 2>/dev/null || echo "(no session log)"
+            exit $rc
+          fi
 
       - name: Override generated twa-manifest.json with our prepared template
         working-directory: mobile
@@ -261,4 +279,6 @@ jobs:
             mobile/app/build.gradle
             mobile/gradle/wrapper/gradle-wrapper.properties
             mobile/.bubblewrap/
+            /tmp/init-session.log
+            /tmp/init.exp
           if-no-files-found: ignore
