@@ -193,8 +193,8 @@ jobs:
             echo "============================================"
             tail -n 200 /tmp/init-session.log 2>/dev/null || echo "(no session log)"
 
-            # 把末 100KB 写到小文件，github-script 步骤读它（避免 V8 字符串长度限制）
-            tail -c 100000 /tmp/init-session.log > /tmp/init-tail.log 2>/dev/null || true
+            # 把末 30KB 写到小文件（GitHub Issue body 上限 64KB，留余量给 markdown 包裹）
+            tail -c 30000 /tmp/init-session.log > /tmp/init-tail.log 2>/dev/null || true
 
             # 也写到 GitHub Step Summary —— 这样会显示在 run 页面最顶部，不需要展开步骤
             {
@@ -329,29 +329,30 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const MAX_BODY = 60000;  // GitHub Issue body 上限 64KB，留余量
+
+            // 读 /tmp/init-tail.log（dump 阶段已 tail -c 30000 写好）
             let log = '(no log file)';
-            // 优先读 dump 阶段写好的 100KB tail 文件，避免 readFileSync 撞 V8 字符串长度上限
-            for (const path of ['/tmp/init-tail.log', '/tmp/init-session.log']) {
+            try {
+              const buf = fs.readFileSync('/tmp/init-tail.log');
+              log = buf.toString('utf8');
+            } catch (e) {
               try {
-                const stats = fs.statSync(path);
-                if (stats.size > 200000) {
-                  // 读最后 100KB
-                  const fd = fs.openSync(path, 'r');
-                  const buf = Buffer.alloc(100000);
-                  fs.readSync(fd, buf, 0, 100000, stats.size - 100000);
-                  fs.closeSync(fd);
-                  log = `...(${path} ${(stats.size/1024/1024).toFixed(1)}MB, showing last 100KB)...\n` + buf.toString('utf8');
-                } else {
-                  log = fs.readFileSync(path, 'utf8');
-                }
-                break;
-              } catch (e) { /* try next */ }
+                // fallback: 直接 readSync 末 30KB（避免 readFileSync 撞 V8 上限）
+                const stats = fs.statSync('/tmp/init-session.log');
+                const fd = fs.openSync('/tmp/init-session.log', 'r');
+                const len = Math.min(30000, stats.size);
+                const buf = Buffer.alloc(len);
+                fs.readSync(fd, buf, 0, len, Math.max(0, stats.size - len));
+                fs.closeSync(fd);
+                log = buf.toString('utf8');
+              } catch (e2) { log = '(read error: ' + e2.message + ')'; }
             }
 
-            const body = [
-              `**Run**: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              `**Commit**: ${context.sha}`,
-              `**Run number**: ${context.runNumber}`,
+            let body = [
+              '**Run**: ' + context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId,
+              '**Commit**: ' + context.sha,
+              '**Run number**: ' + context.runNumber,
               '',
               '### bubblewrap init session log',
               '```',
@@ -359,10 +360,22 @@ jobs:
               '```',
             ].join('\n');
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[debug] build-apk run #${context.runNumber} failed`,
-              body: body,
-              labels: ['ci-debug'],
-            });
+            // 兜底：如果还超 64KB，硬截
+            if (body.length > MAX_BODY) {
+              body = body.slice(0, MAX_BODY) + '\n...(truncated)';
+            }
+
+            try {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '[debug] build-apk run #' + context.runNumber + ' failed',
+                body: body,
+              });
+              console.log('debug issue created');
+            } catch (e) {
+              console.log('failed to create debug issue: ' + e.message);
+              console.log('--- body preview (first 2000 chars) ---');
+              console.log(body.slice(0, 2000));
+              throw e;
+            }
