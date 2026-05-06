@@ -48,10 +48,12 @@ STATIC_DIR = HERE / "static"
 
 app = FastAPI(title="Sentinel-MCP Dashboard", version="0.3.0")
 
-# 审计 DB：默认 0427_test01/data/sentinel.db（与 sentinel-mcp wrap 共用），
-# 环境变量 SENTINEL_DB 覆盖。沿用旧的 0425_test01/data/audit.db 也行，但
-# 那是 v0.1 demo 的库，演示 v0.2 实时事件流时会混入历史脏数据。
-_DEFAULT_DB = _REPO_ROOT / "data" / "sentinel.db"
+# 审计 DB：默认 ~/.sentinel-mcp/sentinel.db（绝对路径），与 cli.py 严格一致。
+# 之前用 _REPO_ROOT 是 bug — hook 装好后从 Claude Code cwd (任意位置) 跑，
+# 用 Path.cwd() 算 db 路径，跟 dashboard 用 _REPO_ROOT 算的路径不同 → db 不同步 →
+# dashboard 看不到 hook 的审批请求 → user_denied 超时。
+# 环境变量 SENTINEL_DB 覆盖。
+_DEFAULT_DB = Path.home() / ".sentinel-mcp" / "sentinel.db"
 DB_PATH = os.environ.get("SENTINEL_DB", str(_DEFAULT_DB))
 Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 audit = AuditLog(DB_PATH)

@@ -21,10 +21,13 @@ from sentinel_mcp.approvals import PendingDecisions
 from sentinel_mcp.proxy import MCPProxy
 
 # 默认策略：包内自带 sentinel_mcp/config/policies.yaml，pip install 之后也能找到。
-# 默认审计 DB：放当前 cwd 下的 data/sentinel.db；环境变量 SENTINEL_DB 优先。
+# 默认审计 DB：固定到 ~/.sentinel-mcp/sentinel.db（绝对路径）。
+# 关键：hook 和 dashboard 必须用同一个 db，否则 hook 的审批请求 dashboard 看不到。
+# 之前用 Path.cwd() 是 bug —— hook 在 Claude Code cwd 跑，dashboard 在另一个 cwd 跑，
+# 两边 db 不同步。环境变量 SENTINEL_DB 优先级最高（部署/测试可覆盖）。
 _PKG_ROOT = Path(__file__).resolve().parent  # sentinel_mcp/
 _DEFAULT_POLICY = _PKG_ROOT / "config" / "policies.yaml"
-_DEFAULT_DB = Path.cwd() / "data" / "sentinel.db"
+_DEFAULT_DB = Path.home() / ".sentinel-mcp" / "sentinel.db"
 
 
 def _build_parser() -> argparse.ArgumentParser:
