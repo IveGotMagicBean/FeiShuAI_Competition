@@ -94,3 +94,10 @@ mobile/node_modules/
 下一步计划_*.md
 PROGRESS_*.md
 UPDATE_REPORT_*.md
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
