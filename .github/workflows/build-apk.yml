@@ -168,6 +168,17 @@ jobs:
             echo "==== /tmp/init-session.log 末 200 行 ===="
             echo "============================================"
             tail -n 200 /tmp/init-session.log 2>/dev/null || echo "(no session log)"
+
+            # 也写到 GitHub Step Summary —— 这样会显示在 run 页面最顶部，不需要展开步骤
+            {
+              echo "## ❌ bubblewrap init 失败 (rc=$rc)"
+              echo ""
+              echo "### init session log (末 100 行)"
+              echo '```'
+              tail -n 100 /tmp/init-session.log 2>/dev/null || echo "(no session log)"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+
             exit $rc
           fi
 
