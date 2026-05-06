@@ -27,6 +27,7 @@ on:
 
 permissions:
   contents: write     # 上传 release asset
+  issues: write       # 失败时自动开 debug issue
 
 jobs:
   build:
