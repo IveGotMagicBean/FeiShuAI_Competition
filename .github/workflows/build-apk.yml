@@ -132,8 +132,13 @@ jobs:
             -re {[Pp]ush [Dd]elegation}          { send -- "Y\r"; exp_continue }
             -re {[Ss]kip PWA [Qq]uality}         { send -- "Y\r"; exp_continue }
             -re {Domain being opened}            { send -- "\r"; exp_continue }
+            -re {Domain:}                        { send -- "\r"; exp_continue }
+            -re {[Uu]rl path}                    { send -- "\r"; exp_continue }
+            -re {URL path}                       { send -- "\r"; exp_continue }
             -re {Name of the application}        { send -- "\r"; exp_continue }
             -re {launcher}                       { send -- "\r"; exp_continue }
+            -re {[Tt]heme color}                 { send -- "\r"; exp_continue }
+            -re {[Bb]ackground color}            { send -- "\r"; exp_continue }
             -re {Display mode}                   { send -- "\r"; exp_continue }
             -re {Orientation}                    { send -- "\r"; exp_continue }
             -re {Status bar color}               { send -- "\r"; exp_continue }
