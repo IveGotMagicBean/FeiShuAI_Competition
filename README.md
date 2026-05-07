@@ -191,14 +191,13 @@ python -m tests.attack_cases.run_all   # 53 条红队攻击集 (53/53)
 
 | 文档 | 用途 |
 |---|---|
-| [`SUBMISSION_CHECKLIST.md`](./SUBMISSION_CHECKLIST.md) | **赛题对照清单** — 每条要求映射到具体文件 |
 | [`docs/01_TECHNICAL_DESIGN.md`](./docs/01_TECHNICAL_DESIGN.md) | 技术方案设计（架构 / 决策推导 / L1–L4 细节 / 性能） |
 | [`docs/02_INSTALL_GUIDE.md`](./docs/02_INSTALL_GUIDE.md) | 安装与运行指南 |
 | [`docs/03_TEST_REPORT.md`](./docs/03_TEST_REPORT.md) | 测试报告（含性能基准） |
-| [`docs/04_DEMO_SCRIPT.md`](./docs/04_DEMO_SCRIPT.md) | 5 分钟现场演示脚本 |
 | [`docs/05_DESKTOP_BUILD.md`](./docs/05_DESKTOP_BUILD.md) | 桌面端构建指南（PyInstaller / Tauri / PWA 三条路径） |
+| [`docs/06_MOBILE_BUILD.md`](./docs/06_MOBILE_BUILD.md) | 移动端构建指南（Bubblewrap TWA 部署 SOP） |
+| [`docs/08_LARK_INTEGRATION.md`](./docs/08_LARK_INTEGRATION.md) | 飞书集成完整指南（注册 / 配置 / 故障排查） |
 | [`RELEASE_GUIDE.md`](./RELEASE_GUIDE.md) | 怎么发布新版本（git tag → 自动出全平台安装包） |
-| [`ROADMAP_v0.2.md`](./ROADMAP_v0.2.md) | 30 天路线图 |
 | [`CHANGELOG.md`](./CHANGELOG.md) | 版本日志 |
 
 ---
