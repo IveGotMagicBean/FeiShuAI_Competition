@@ -89,8 +89,11 @@ mobile/package.json
 mobile/package-lock.json
 mobile/node_modules/
 
-# ---- 个人日报 / 中间笔记（不属于产品代码）----
+# ---- 个人日报 / 中间笔记 / 提交材料（不属于产品代码）----
 日报_*.md
 下一步计划_*.md
 PROGRESS_*.md
 UPDATE_REPORT_*.md
+项目提交_*.md
+ROADMAP_v*.md
+SUBMISSION_CHECKLIST.md
